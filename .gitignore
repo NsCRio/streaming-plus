@@ -1,4 +1,5 @@
 /.idea/
 /db/
 /data/
+/data_old/
 .env

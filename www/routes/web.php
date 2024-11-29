@@ -17,3 +17,5 @@ $router->get('/', function () use ($router) {
     dd(config('database.connections.mysql'));
     return $router->app->version();
 });
+
+$router->get('/Items', ['as'=> 'items', 'uses'=>'JellyfinSearchController@getItems']);

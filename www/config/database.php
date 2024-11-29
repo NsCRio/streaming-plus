@@ -35,9 +35,15 @@ return [
 
     'connections' => [
 
-        'sqlite' => [
+        'jellyfin' => [
             'driver' => 'sqlite',
-            'database' => env('SP_DB_DATABASE', database_path('database.sqlite')),
+            'database' => sp_data_path('/jellyfin/data/jellyfin.db'),
+            'prefix' => env('SP_DB_PREFIX', ''),
+        ],
+
+        'library' => [
+            'driver' => 'sqlite',
+            'database' => sp_data_path('/jellyfin/data/library.db'),
             'prefix' => env('SP_DB_PREFIX', ''),
         ],
 
