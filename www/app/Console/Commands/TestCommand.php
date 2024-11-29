@@ -63,7 +63,7 @@ class TestCommand extends Command
         $path = "/var/www/resources/python";
         $output = [];
         $return_var = "";
-        exec("printf '0\n1992\n0\n' | resources/python/bin/python3 resources/python/run_streaming.py", $output, $return_var);
+        //exec("printf '0\n1992\n0\n' | resources/python/bin/python3 resources/python/run_streaming.py", $output, $return_var);
 
         dd($output, $return_var);
 

@@ -28,8 +28,11 @@ mkdir -p $SP_DATA_PATH/jellyfin/cache
 mkdir -p $SP_DATA_PATH/media
 mkdir -p $SP_DATA_PATH/env
 
-#Installa StreamingCommunity all'ultima versione
-python3 -m venv /data/env && /data/env/bin/pip install --upgrade StreamingCommunity
+#Cambio i loghi di Jellyfin
+cp -r /var/src/img/ /usr/share/jellyfin/web/assets/
+
+#Installa StreamingCommunity
+python3 -m venv /data/env && /data/env/bin/pip install StreamingCommunity
 
 chown -R $USER_NAME:$GROUP_NAME $SP_DATA_PATH/
 

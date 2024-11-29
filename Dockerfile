@@ -52,6 +52,7 @@ WORKDIR $WORKDIR
 
 # Copy the Laravel application and necessary files
 COPY www $WORKDIR
+COPY src /var/src
 
 # Install Laravel dependencies via Composer
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader

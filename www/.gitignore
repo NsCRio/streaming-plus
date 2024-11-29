@@ -7,3 +7,4 @@ Homestead.yaml
 .phpunit.result.cache
 core.log
 /Subtitle Edit
+/resources/python
