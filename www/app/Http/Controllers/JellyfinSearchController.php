@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\IMDB\IMDBApiManager;
+use App\Services\MammaMia\MammaMiaApiManager;
 use Illuminate\Http\Request;
 
 class JellyfinSearchController extends Controller
@@ -26,11 +27,15 @@ class JellyfinSearchController extends Controller
 
         if(!empty($searchTerm)){
             $imdbApi = new IMDBApiManager();
-            $response = $imdbApi->search($searchTerm);
+            $response = $imdbApi->search($searchTerm, 'tvSeries');
 
             if(!empty($response)){
                 foreach ($response as $item){
-                    dd($item);
+
+                    $mmApi = new MammaMiaApiManager();
+                    $response = $mmApi->getSeriesEpisode($item['id'], 1, 1);
+
+                    dd($item, $response);
 
 
 

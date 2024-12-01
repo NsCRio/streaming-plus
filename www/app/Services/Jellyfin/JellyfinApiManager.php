@@ -3,10 +3,11 @@
 namespace App\Services\Jellyfin;
 
 use App\Models\Jellyfin\ApiKeys;
+use App\Services\Api\AbstractApiManager;
 use Carbon\Carbon;
 use GuzzleHttp\Client;
 
-class JellyfinApiManager
+class JellyfinApiManager extends AbstractApiManager
 {
     protected $endpoint, $accessToken;
 
@@ -20,7 +21,7 @@ class JellyfinApiManager
     }
 
     private function getAccessToken(){
-        //try {
+        try {
             $apikey = ApiKeys::query()->where('Name', 'streaming-plus')
                 ->orWhere('AccessToken', md5('streaming-plus'))
                 ->orderBy('DateCreated')->first();
@@ -33,37 +34,19 @@ class JellyfinApiManager
                 $apikey->save();
             }
             return $apikey->AccessToken;
-        //}catch (\Exception $e){}
+        }catch (\Exception $e){}
         return null;
     }
 
-    public static function call(string $uri, string $method = 'GET', array $data = [], array $headers = []) : array|null {
-        $api = new self();
-        return $api->apiCall($uri, $method, $data, $headers);
-    }
-
-    private function apiCall(string $uri, string $method = 'GET', array $data = [], array $headers = []) : array|null {
-        //try {
-            $cli = new Client();
-            $timeout = 5;
-            $data = json_encode($data);
-            $uri = !str_starts_with('/', $uri) ? $uri : '/' . $uri;
-            $default_headers = [
-                'Content-Type' => 'application/json',
-                'Content-Length' => strlen($data),
-                'X-Emby-Token' => $this->accessToken,
-            ];
-            $headers = array_merge($default_headers, $headers);
-            $r = $cli->request($method, $this->endpoint . $uri, [
-                'connect_timeout' => $timeout,
-                'headers' => $headers,
-                'body' => $data,
-            ]);
-            $res = (string)$r->getBody();
-            $res = json_decode($res, true);
-            return $res;
-        //}catch (\Exception $e){}
-        return null;
+    protected function apiCall(string $uri, string $method = 'GET', array $data = [], array $headers = []) : array|null {
+        $default_headers = [
+            'Content-Type' => 'application/json',
+            'Content-Length' => strlen(json_encode($data)),
+            'X-Emby-Token' => $this->accessToken,
+        ];
+        $headers = array_merge($default_headers, $headers);
+        $method = $method == 'POST' ? 'POST_BODY' : $method;
+        return parent::apiCall($uri, $method, $data, $headers);
     }
 
 }

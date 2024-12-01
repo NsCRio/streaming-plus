@@ -2,62 +2,57 @@
 
 namespace App\Services\IMDB;
 
+use App\Services\Api\AbstractApiManager;
 use App\Services\Scraper\ProxyManager;
+use Carbon\Carbon;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Cache;
 
-class IMDBApiManager
+class IMDBApiManager extends AbstractApiManager
 {
     protected $endpoint;
+    protected $types = [
+        'movie',
+        'tvSeries'
+    ];
 
     public function __construct(){
         $this->endpoint = "https://v3.sg.media-imdb.com";
     }
 
-    public function search($searchTerm, $limit = 5){
-        if(Cache::has('imdb_search_'.md5($searchTerm)))
-            return Cache::get('imdb_search_'.md5($searchTerm));
+    public function search(string $searchTerm, string $type = null, int $limit = 5){
+        if(Cache::has('imdb_search_'.md5($searchTerm.$type.$limit)))
+            return Cache::get('imdb_search_'.md5($searchTerm.$type.$limit));
 
         $uri = '/suggestion/x/'.urlencode($searchTerm).'.json';
         $response = $this->apiCall($uri, 'GET', ['includeVideos' => 0]);
         if(!empty($response['d'])) {
-            $outcome = array_slice($response['d'], 0, $limit);
-            Cache::get('imdb_search_'.md5($searchTerm), $outcome);
+            $outcome = array_filter(array_slice($response['d'], 0, $limit), function($item) {
+                return in_array(@$item['qid'], $this->types);
+            });
+            if(isset($type) && in_array($type, $this->types)) {
+                $outcome = array_filter($outcome, function($item) use ($type) {
+                   return @$item['qid'] == $type;
+                });
+            }
+            $outcome = array_values($outcome);
+            Cache::put('imdb_search_'.md5($searchTerm.$type.$limit), $outcome, Carbon::now()->addDay());
             return $outcome;
         }
         return null;
     }
 
-    public static function call(string $uri, string $method = 'GET', array $data = [], array $headers = []) : array|null {
-        $api = new self();
-        return $api->apiCall($uri, $method, $data, $headers);
-    }
-
-    private function apiCall(string $uri, string $method = 'GET', array $data = [], array $headers = []) : array|null {
-        try {
-            $cli = new Client();
-            $timeout = 60;
-            $platforms = ['macOS', 'Windows', 'Android', 'iOS'];
-            $uri = !str_starts_with('/', $uri) ? $uri : '/' . $uri;
-            $uri = sprintf("%s?%s", $uri, http_build_query($data));
-            $default_headers = [
-                'sec-ch-ua-platform' => $platforms[array_rand($platforms)],
-                'Referer' => 'https://www.imdb.com/',
-                'User-Agent' => ProxyManager::getRandomAgent(),
-                'Accept' => 'application/json, text/plain, */*',
-                'sec-ch-ua' => '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
-                'sec-ch-ua-mobile' => '?0',
-            ];
-            $headers = array_merge($default_headers, $headers);
-            $r = $cli->request($method, $this->endpoint . $uri, [
-                'connect_timeout' => $timeout,
-                'headers' => $headers,
-                //'body' => $data,
-            ]);
-            $res = (string)$r->getBody();
-            $res = json_decode($res, true);
-            return $res;
-        }catch (\Exception $e){}
-        return null;
+    protected function apiCall(string $uri, string $method = 'GET', array $data = [], array $headers = []) : array|null {
+        $platforms = ['macOS', 'Windows', 'Android', 'iOS'];
+        $default_headers = [
+            'Referer' => 'https://www.imdb.com/',
+            'User-Agent' => $this->getRandomAgent(),
+            'Accept' => 'application/json, text/plain, */*',
+            'sec-ch-ua' => '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+            'sec-ch-ua-mobile' => '?0',
+            'sec-ch-ua-platform' => $platforms[array_rand($platforms)],
+        ];
+        $headers = array_merge($default_headers, $headers);
+        return parent::apiCall($uri, $method, $data, $headers);
     }
 }
