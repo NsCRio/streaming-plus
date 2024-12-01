@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Jellyfin\Api;
+namespace App\Services\Jellyfin;
 
 use App\Models\Jellyfin\ApiKeys;
 use Carbon\Carbon;

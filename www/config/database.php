@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'default' => env('SP_DB_CONNECTION', 'mysql'),
+    'default' => env('SP_DB_CONNECTION', 'streaming_plus'),
 
     /*
     |--------------------------------------------------------------------------
@@ -34,6 +34,12 @@ return [
     */
 
     'connections' => [
+
+        'streaming_plus' => [
+            'driver' => 'sqlite',
+            'database' => sp_data_path('/app/database.sqlite'),
+            'prefix' => env('SP_DB_PREFIX', ''),
+        ],
 
         'jellyfin' => [
             'driver' => 'sqlite',

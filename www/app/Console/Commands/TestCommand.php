@@ -2,14 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Jellyfin\ApiKeys;
-use App\Models\Jellyfin\Users;
-use App\Services\Api\ExternalApi;
-use App\Services\Jellyfin\Api\JellyfinApiManager;
-use App\Services\Scraper\WebDriver\WebDriverManager;
-use Carbon\Carbon;
+use App\Services\Jellyfin\JellyfinApiManager;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 
 class TestCommand extends Command
 {

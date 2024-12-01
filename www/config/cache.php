@@ -17,7 +17,7 @@ return [
     |
     */
 
-    'default' => env('SP_APP_CACHE_DRIVER', 'file'),
+    'default' => env('SP_APP_CACHE_DRIVER', 'database'),
 
     /*
     |--------------------------------------------------------------------------
@@ -43,7 +43,7 @@ return [
         'database' => [
             'driver' => 'database',
             'table' => env('SP_APP_CACHE_DATABASE_TABLE', 'cache'),
-            'connection' => env('SP_APP_CACHE_DATABASE_CONNECTION'),
+            'connection' => env('SP_APP_CACHE_DATABASE_CONNECTION', 'streaming_plus'),
         ],
 
         'file' => [

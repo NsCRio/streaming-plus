@@ -6,9 +6,9 @@ class ExternalApiManager
 {
     protected $response;
 
-    public function __construct($url, $method = 'GET', array $data = null)
+    public function __construct($url, $method = 'GET', array $data = null, array $headers = [])
     {
-        $this->sendRequest($url, $method, $data);
+        $this->sendRequest($url, $method, $data, $headers);
     }
 
     public function sendRequest($url, $method, array $data, array $headers = []){
@@ -38,21 +38,6 @@ class ExternalApiManager
 
     public function getResponse(){
         return ($this->response) ? json_decode($this->response, true) : null;
-    }
-
-    public static function decryptForCustomerArea($encryptedKey){
-        try {
-            $salt = env('APP_SALT');
-            $c = unserialize(base64_decode($encryptedKey));
-            $ivlen = openssl_cipher_iv_length($cipher = "AES-128-CBC");
-            $iv = substr($c, 0, $ivlen);
-            $ciphertext_raw = substr($c, $ivlen);
-            $original_plaintext = openssl_decrypt($ciphertext_raw, $cipher, $salt, $options = OPENSSL_RAW_DATA, $iv);
-            $original_plaintext = urldecode(base64_decode($original_plaintext));
-            return $original_plaintext;
-        }catch (\Exception $e){
-            return null;
-        }
     }
 
 }

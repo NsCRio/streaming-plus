@@ -14,6 +14,7 @@
 */
 
 $router->get('/', function () use ($router) {
+    #/jellyfin/web/#/wizardstart.html
     dd(config('database.connections.mysql'));
     return $router->app->version();
 });

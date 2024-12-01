@@ -26,7 +26,7 @@ return [
     |
     */
 
-    'env' => env('SP_APP_ENV', 'production'),
+    'env' => env('SP_APP_ENV', 'local'),
 
     /*
     |--------------------------------------------------------------------------
@@ -39,7 +39,7 @@ return [
     |
     */
 
-    'debug' => (bool) env('SP_APP_DEBUG', false),
+    'debug' => (bool) env('SP_APP_DEBUG', true),
 
     /*
     |--------------------------------------------------------------------------
@@ -52,7 +52,7 @@ return [
     |
     */
 
-    'url' => env('SP_APP_URL', 'http://localhost'),
+    'url' => env('SP_APP_URL', 'http://localhost:8095'),
 
     /*
     |--------------------------------------------------------------------------
@@ -65,7 +65,7 @@ return [
     |
     */
 
-    'timezone' => env('SP_TIMEZONE', 'UTC'),
+    'timezone' => env('SP_TIMEZONE', 'Europe/Rome'),
 
     /*
     |--------------------------------------------------------------------------
