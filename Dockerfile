@@ -11,7 +11,7 @@ ARG TIMEZONE="Europe/Rome"
 ENV SP_DATA_PATH=/data
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get clean && apt-get update -y && apt-get install -y \
     wget \
     git \
     build-essential \
@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     libfreetype6-dev libjpeg62-turbo-dev libmemcached-dev \
     libzip-dev libpng-dev libonig-dev libxml2-dev librdkafka-dev libpq-dev \
-    python3 python3-pip python3-flask python3-numpy python3-pandas python3-venv \
+    python3 python3-pip python3-venv \
     nodejs npm \
     openssh-server \
     zip unzip \

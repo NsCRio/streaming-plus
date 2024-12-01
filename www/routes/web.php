@@ -18,4 +18,9 @@ $router->get('/', function () use ($router) {
     return $router->app->version();
 });
 
+$router->get('/jellyfin', function () use ($router) {
+    dd('se sono qui non va bene');
+    return $router->app->version();
+});
+
 $router->get('/Items', ['as'=> 'items', 'uses'=>'JellyfinSearchController@getItems']);

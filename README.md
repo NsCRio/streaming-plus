@@ -17,6 +17,9 @@ docker-compose exec app bash
 Down
 docker-compose down
 
+#Se da errore apt-get update
+docker-compose down -v --rmi all --remove-orphans
+
 
 
 Tabelle DB

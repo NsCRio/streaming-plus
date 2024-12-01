@@ -7,12 +7,17 @@ services:
     image: streamingplus-app
     hostname: streamingplusapp
     restart: unless-stopped
+    environment:
+      - TMDB_KEY=6569d1c82ecec5ab54a036077a98846c
     volumes:
       - ./www:/var/www          #Questo lo mappo solo per non buildare ogni volta
       - ./src:/var/src          #Questo lo mappo solo per non buildare ogni volta
+      #- ./src/entrypoint.sh:/usr/local/bin/entrypoint.sh          #Questo lo mappo solo per non buildare ogni volta
+      #- ./src/supervisord.conf:/etc/supervisor/supervisord.conf   #Questo lo mappo solo per non buildare ogni volta
       - ./data:/data
     ports:
       - "8095:8095"
       - "8097:8097"
-    #devices:
+      - "8098:8080"
+      #devices:
       #- /dev/dri:/dev/dri
