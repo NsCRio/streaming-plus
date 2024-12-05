@@ -21,7 +21,7 @@ class AbstractModel extends Model
         $this->attributes[$this->fieldPrefix.'_'.$key] = $value;
     }
 
-    public function getField($key, $value){
+    public function getField($key){
         return @$this->attributes[$this->fieldPrefix.'_'.$key];
     }
 

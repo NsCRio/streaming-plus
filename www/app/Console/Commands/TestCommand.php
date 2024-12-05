@@ -50,54 +50,9 @@ class TestCommand extends Command
 
         dd('nessun test');
 
-        $search = new ItemsSearchManager('One Piece');
-        $results = $search->search()->getResults(); //Momentaneo
+        $search = new ItemsSearchManager("Deadpool & Wolverine");
+        $results = $search->search()->getResults();
         dd($results);
-
-        $search = new ItemsSearchManager('Mr. robot');
-        $results = $search->search(true)->getResults();
-        dd($results);
-
-        $api = new IMDBApiManager();
-        $responses = $api->search('How i met your mother', null, 1);
-        //dd($api->search('One Piece'));
-        dd($responses);
-
-//        $api = new JellyfinApiManager();
-//        $res = $api->getAllApiKeys();
-        $res = JellyfinApiManager::call('/Users');
-
-        dd($res);
-        //$apikey->save();
-
-        //printf '0\n1992\n0\n' | resources/python/bin/python3 resources/python/run_streaming.py
-
-        $path = "/var/www/resources/python";
-        $output = [];
-        $return_var = "";
-        //exec("printf '0\n1992\n0\n' | resources/python/bin/python3 resources/python/run_streaming.py", $output, $return_var);
-
-        dd($output, $return_var);
-
-        //try {
-
-            dd(WebDriverManager::driverChrome());
-            dd(WebDriverManager::driverFirefox());
-
-            $url = "https://streamingcommunity.computer/archivio";
-            $api = ExternalApi::call('GET', $url, [
-                'accept' => 'text/html, application/xhtml+xml',
-            ],
-            [
-                'search' => 'Interstellar',
-                'type' => 'movie',
-            ]);
-
-            dd($api);
-
-//        }catch (\Exception $e){
-//            dd($e);
-//        }
 
         $this->info("end. (".number_format(microtime(true) - $start, 2)."s)\n");
     }

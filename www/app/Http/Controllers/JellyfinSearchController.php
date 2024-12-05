@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Cache;
 class JellyfinSearchController extends Controller
 {
 
+    /**
+     * @throws \Exception
+     */
     public function getItems(Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
         $searchTerm = trim(strtolower($request->get('searchTerm')));
         $itemType = $request->get('includeItemTypes');
@@ -30,11 +33,12 @@ class JellyfinSearchController extends Controller
                 $search = new ItemsSearchManager($searchTerm);
                 $results = $search->search()->getResults();
 
-                if(!empty($results))
+                if(!empty($results)){
                     $api->startLibraryScan();
+                    sleep(30); //Do il tempo a Jellyfin di aggiornare la libreria
+                    Cache::put("jellyfin_search_result_".md5($searchTerm), $results, Carbon::now()->addMinutes(10));
+                }
 
-                sleep(10); //Do il tempo a Jellyfin di aggiornare la libreria
-                Cache::put("jellyfin_search_result_".md5($searchTerm), $results, Carbon::now()->addMinutes(10));
                 Cache::forget("jellyfin_searching_".md5($searchTerm));
                 Cache::forget('jellyfin_search');
             }
@@ -44,6 +48,53 @@ class JellyfinSearchController extends Controller
 
         return response($response)->header('Content-Type', 'application/json');
     }
+
+//    public function getItems(Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+//        $searchTerm = trim(strtolower($request->get('searchTerm')));
+//        $includeItemTypes = $request->get('includeItemTypes');
+//        $isMissing = $request->get('isMissing', false);
+//
+//        $response = [];
+//        $api = new JellyfinApiManager();
+//
+//        //$response = $api->getItems($request->all());
+//        //return response($response)->header('Content-Type', 'application/json');
+//
+//
+//        if(!$isMissing && in_array(trim($includeItemTypes), ["Movie", "Series"])) {
+//            $itemTypeMap = ['Series' => 'tvSeries', 'Movie' => 'movie'];
+//            $itemType = $itemTypeMap[$includeItemTypes];
+//
+//            $isSearching = Cache::has("jellyfin_searching_" . md5($searchTerm . $itemType));
+//            if (!$isSearching) {
+//                //$searchTerms = array_merge(Cache::get('jellyfin_search_' . md5($itemType), []), [$searchTerm]);
+//                //Cache::put('jellyfin_search_' . md5($itemType), $searchTerms);
+//
+//                //if (array_count_values($searchTerms)[$searchTerm] >= 2) {
+//                Cache::put("jellyfin_searching_" . md5($searchTerm . $itemType), $searchTerm);
+//
+//                $search = new ItemsSearchManager($searchTerm);
+//                $results = $search->search()->getResults();
+//                if (!empty($results)) {
+//                    $api->startLibraryScan();
+//                    sleep(30); //Do il tempo a Jellyfin di aggiornare la libreria
+////                        foreach ($results as $result) {
+////                            $req = array_merge($request->all(), ['searchTerm' => $result->getField('title')]);
+////                            $response = array_merge($response, $api->getItems($req));
+////                        }
+//                }
+//
+//                //Cache::forget('jellyfin_search_' . md5($itemType));
+//                Cache::forget('jellyfin_searching_' . md5($searchTerm . $itemType));
+//                //}
+//            }
+//        }
+//
+//        if(empty($response))
+//            $response = $api->getItems($request->all());
+//
+//        return response($response)->header('Content-Type', 'application/json');
+//    }
 
     public function getPersons(Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
         $response = Cache::remember('jellyfin_persons_'.md5(json_encode($request->all())), Carbon::now()->addHour(), function () use($request) {

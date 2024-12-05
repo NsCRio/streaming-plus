@@ -8,10 +8,11 @@ use Carbon\Carbon;
 
 class ItemsSearchManager
 {
-    protected $searchTerm, $results = [];
+    protected $searchTerm, $itemType, $results = [];
 
-    public function __construct($searchTerm){
+    public function __construct(string $searchTerm, string $itemType = null){
         $this->searchTerm = $searchTerm;
+        $this->itemType = $itemType;
     }
 
     /**
@@ -20,12 +21,10 @@ class ItemsSearchManager
     public function search($forceOnline = false): static
     {
         if(!empty($this->searchTerm)){
-            $results = [];
             if(!$forceOnline)
-                $results = $this->searchOnLocal();
-            if((empty($results) || count($results) == 0))
-                $results = $this->searchOnImdb();
-            $this->results = $results;
+                $this->searchOnLocal();
+            if((empty($this->results) || count($this->results) == 0))
+                $this->searchOnImdb();
         }
         return $this;
     }
@@ -37,13 +36,16 @@ class ItemsSearchManager
     /**
      * @throws \Exception
      */
-    protected function searchOnLocal(): array
+    public function searchOnLocal(): ItemsSearchManager
     {
         $query = Items::query()
             ->whereField('imdb_id', 'like', "%{$this->searchTerm}%")
             ->orWhereField('title', 'like', "%{$this->searchTerm}%")
             ->orWhereField('original_title', 'like', "%{$this->searchTerm}%")
-            ->where('updated_at', '>=', Carbon::now()->subDays(2));
+            ->where('updated_at', '>=', Carbon::now()->subDay());
+        if(isset($this->itemType))
+            $query->whereField('item_type', $this->itemType);
+
         $results = [];
         if($query->count() > 0){
             foreach ($query->get() as $item){
@@ -51,17 +53,19 @@ class ItemsSearchManager
                 $results[] = $item;
             }
         }
-        return $results;
+        $this->results = array_merge($this->results, $results);
+        return $this;
     }
 
-    protected function searchOnImdb(): array
+    public function searchOnImdb(): ItemsSearchManager
     {
         $api = new IMDBApiManager();
-        $response = $api->search($this->searchTerm, null, 1);
+        $response = $api->search($this->searchTerm, $this->itemType);
         $results = [];
         foreach($response as $result){
             $results[] = ItemsManager::imdbDataToDatabase($result);
         }
-        return $results;
+        $this->results = array_merge($this->results, $results);
+        return $this;
     }
 }

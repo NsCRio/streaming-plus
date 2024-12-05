@@ -20,9 +20,12 @@ class IMDBApiManager extends AbstractApiManager
 
     public function __construct(){}
 
-    public function search(string $searchTerm, string $type = null, int $limit = 5, bool $cache = true){
-        if(Cache::has('imdb_search_'.md5($searchTerm.$type.$limit)) && $cache)
-            return Cache::get('imdb_search_'.md5($searchTerm.$type.$limit));
+    public function search(string $searchTerm, string $type = null, int $limit = 10, bool $cache = true){
+        if(Cache::has('imdb_search_'.md5($searchTerm.$type.$limit)) && $cache) {
+            $searchResponse = Cache::get('imdb_search_' . md5($searchTerm . $type . $limit));
+            if (!empty($searchResponse))
+                return $searchResponse;
+        }
 
         $searchResponse = [];
         $uri = str_replace('{search_term}', urlencode($searchTerm), config('app.imdb.suggestions_url'));
@@ -30,7 +33,7 @@ class IMDBApiManager extends AbstractApiManager
             return $this->apiCall($uri, 'GET', ['includeVideos' => 0]);
         });
         if(!empty($response['d'])) {
-            $outcome = array_filter(array_slice($response['d'], 0, $limit), function($item) {
+            $outcome = array_filter($response['d'], function($item) {
                 return in_array(@$item['qid'], $this->types);
             });
             if(isset($type) && in_array($type, $this->types)) {
@@ -38,7 +41,7 @@ class IMDBApiManager extends AbstractApiManager
                    return @$item['qid'] == $type;
                 });
             }
-            $outcome = array_values($outcome);
+            $outcome = array_values(array_slice($outcome, 0, $limit));
             if(!empty($outcome)) {
                 foreach($outcome as $item) {
                     if(isset($item['id']) && trim($item['id']) !== "" &&
@@ -60,7 +63,10 @@ class IMDBApiManager extends AbstractApiManager
                 }
             }
         }
-        //Salvo questa ricerca in cache
+
+        if(empty($searchResponse)) //Se è vuota la risposta potrebbe essere non valida la key
+            Cache::forget('imdb_apikey');
+
         Cache::put('imdb_search_'.md5($searchTerm.$type.$limit), $searchResponse, Carbon::now()->addDay());
         return $searchResponse;
     }
@@ -97,6 +103,9 @@ class IMDBApiManager extends AbstractApiManager
             }) ?? [];
 
             $releaseDate = @$titleData['releaseDate']['year'].'-'.@$titleData['releaseDate']['month'].'-'.@$titleData['releaseDate']['day'];
+            if(str_contains($releaseDate, '--'))
+                $releaseDate = @$titleData['releaseDate']['year'].'-01-01';
+
             $productionStatus = @$titleData['productionStatus']['currentProductionStage']['text'];
 
             $searchItem = [
@@ -190,16 +199,21 @@ class IMDBApiManager extends AbstractApiManager
 
     public function getApiKey(){
         if(empty($this->apiKey)) {
-            $this->apiKey = Cache::remember('imdb_apikey', Carbon::now()->addHours(12), function () {
+            if(Cache::has('imdb_apikey'))
+                $this->apiKey = Cache::get('imdb_apikey');
+
+            if(empty($this->apiKey)) {
                 $html = $this->apiCall("https://www.imdb.com", 'GET', [], ['referer' => 'https://www.google.com/'], true);
                 if (!empty($html)) {
                     $crawler = new Crawler($html);
                     $script = $crawler->filterXPath('//script[contains(@src, "/_buildManifest.js")]')->attr('src');
-                    if (!empty($script))
-                        return Str::between($script, '/_next/static/', '/_buildManifest.js');
+                    if (!empty($script)) {
+                        $this->apiKey = Str::between($script, '/_next/static/', '/_buildManifest.js');
+                        if (!empty($this->apiKey))
+                            Cache::put('imdb_apikey', $this->apiKey, Carbon::now()->addHours(12));
+                    }
                 }
-                return null;
-            });
+            }
         }
         return $this->apiKey;
     }
