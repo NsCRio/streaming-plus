@@ -2,7 +2,10 @@
 
 namespace App\Console\Commands;
 
+
+use App\Services\IMDB\IMDBApiManager;
 use App\Services\Jellyfin\JellyfinApiManager;
+use App\Services\StreamingPlus\ItemsSearchManager;
 use Illuminate\Console\Command;
 
 class TestCommand extends Command
@@ -44,6 +47,21 @@ class TestCommand extends Command
         set_time_limit(3600);
         ini_set('default_socket_timeout', 10);
         ini_set('memory_limit', '4000M');
+
+        dd('nessun test');
+
+        $search = new ItemsSearchManager('One Piece');
+        $results = $search->search()->getResults(); //Momentaneo
+        dd($results);
+
+        $search = new ItemsSearchManager('Mr. robot');
+        $results = $search->search(true)->getResults();
+        dd($results);
+
+        $api = new IMDBApiManager();
+        $responses = $api->search('How i met your mother', null, 1);
+        //dd($api->search('One Piece'));
+        dd($responses);
 
 //        $api = new JellyfinApiManager();
 //        $res = $api->getAllApiKeys();

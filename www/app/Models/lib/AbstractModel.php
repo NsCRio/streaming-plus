@@ -12,6 +12,11 @@ class AbstractModel extends Model
         return $query->where($this->fieldPrefix.'_'.$key, $value);
     }
 
+    public function scopeOrWhereField($query, $key, $value)
+    {
+        return $query->orWhere($this->fieldPrefix.'_'.$key, $value);
+    }
+
     public function setField($key, $value){
         $this->attributes[$this->fieldPrefix.'_'.$key] = $value;
     }

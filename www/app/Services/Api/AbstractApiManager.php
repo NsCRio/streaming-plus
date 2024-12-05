@@ -13,25 +13,39 @@ class AbstractApiManager
         return $api->apiCall($uri, $method, $data, $headers);
     }
 
-    protected function apiCall(string $uri, string $method = 'GET', array $data = [], array $headers = []) : array|null {
+    protected function apiCall(string $uri, string $method = 'GET', array $data = [], array $headers = [], $returnBody = false) : string|array|null {
         try {
             $cli = new Client();
             $uri = !str_starts_with('/', $uri) ? $uri : '/' . $uri;
             $headers = array_merge($this->default_headers, $headers);
-            $body = [
-                'connect_timeout' => 60,
+            $options = [
+                'connect_timeout' => 120,
                 'headers' => $headers,
             ];
-            if($method == 'POST_BODY') {
-                $body['body'] = json_encode($data);
-            }else{
+            if($method == 'POST' || $method == 'PUT') {
+                $options['form_params'] = $data;
+            }elseif($method == 'POST_BODY') {
+                $method = 'POST';
+                $options['body'] = json_encode($data);
+            }elseif($method == 'POST_JSON') {
+                $method = 'POST';
+                $options['json'] = $data;
+            }elseif($method == 'GET'){
                 $uri = sprintf("%s?%s", $uri, http_build_query($data));
             }
-            $r = $cli->request($method, $this->endpoint . $uri, $body);
-            $res = (string)$r->getBody();
-            $res = json_decode($res, true);
-            return $res;
-        }catch (\Exception $e){}
+            $url = isset($this->endpoint) ? $this->endpoint . $uri : $uri;
+            //dd($method, $url, $options);
+            $r = $cli->request($method, $url, $options);
+            $body = $r->getBody();
+            if($returnBody) {
+                $response = $body->getContents();
+            }else{
+                $response = json_decode((string) $body, true);
+            }
+            return $response;
+        }catch (\GuzzleHttp\Exception\ClientException $e){
+            dd($e->getResponse()->getBody()->getContents());
+        }
         return null;
     }
 

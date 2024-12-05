@@ -24,4 +24,9 @@ $router->get('/jellyfin', function () use ($router) {
     return $router->app->version();
 });
 
-$router->get('/Items', ['as'=> 'items', 'uses'=>'JellyfinSearchController@getItems']);
+$router->get('/stream', ['as'=> 'stream', 'uses'=>'StreamController@getStream']);
+
+//Jellyfin Proxed Routes
+$router->get('/Items', ['as'=> 'jellyfin.items', 'uses'=>'JellyfinSearchController@getItems']);
+$router->get('/Persons', ['as'=> 'jellyfin.persons', 'uses'=>'JellyfinSearchController@getPersons']);
+$router->get('/Artists', ['as'=> 'jellyfin.artists', 'uses'=>'JellyfinSearchController@getArtists']);

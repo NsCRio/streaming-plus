@@ -4,6 +4,7 @@ namespace App\Console;
 
 use App\Console\Commands\IMDbDatasetRetriever;
 use App\Console\Commands\InitCommand;
+use App\Console\Commands\JellyfinSetupCommand;
 use App\Console\Commands\TestCommand;
 use Illuminate\Console\Scheduling\Schedule;
 use Laravel\Lumen\Console\Kernel as ConsoleKernel;
@@ -18,6 +19,9 @@ class Kernel extends ConsoleKernel
     protected $commands = [
         IMDbDatasetRetriever::class,
         TestCommand::class,
+
+        //Jellyfin Commands
+        JellyfinSetupCommand::class,
     ];
 
     /**
@@ -28,6 +32,6 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        //
+        $schedule->command(JellyfinSetupCommand::class)->everyFiveMinutes();
     }
 }

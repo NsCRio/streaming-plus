@@ -46,13 +46,19 @@ class FileHelper
         $splittedFolder = $filePath.".split/";
 
         if(!file_exists($splittedFolder))
-            mkdir($splittedFolder);
+            mkdir($splittedFolder, 0777, true);
 
         exec('split -d -b '.$sizePerFile.' '.$filePath.' '.$splittedFolder);
 
-        return array_values(array_map(function($file) use ($splittedFolder) {
-            return $splittedFolder.$file;
-            }, array_diff(scandir($splittedFolder), array('.', '..'))));
+        return self::getFilesList($splittedFolder);
+    }
+
+    public static function getFilesList($folderPath){
+        if(!str_ends_with($folderPath, "/")) $folderPath .= "/";
+        if(!file_exists($folderPath)) return [];
+        return array_values(array_map(function($file) use ($folderPath) {
+            return $folderPath.$file;
+        }, array_diff(scandir($folderPath), array('.', '..'))));
     }
 
 }

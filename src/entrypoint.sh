@@ -34,7 +34,7 @@ cp /var/src/default.conf /etc/nginx/conf.d/
 mkdir -p $SP_DATA_PATH/app
 mkdir -p $SP_DATA_PATH/jellyfin
 mkdir -p $SP_DATA_PATH/jellyfin/cache
-mkdir -p $SP_DATA_PATH/media
+mkdir -p $SP_DATA_PATH/library
 mkdir -p $SP_DATA_PATH/env
 
 #Configurazione Laravel
@@ -61,7 +61,7 @@ fi
 #Cambio i permessi nelle cartelle data
 chown -R $USER_NAME:$GROUP_NAME $SP_DATA_PATH/app
 chown -R $USER_NAME:$GROUP_NAME $SP_DATA_PATH/jellyfin
-chown -R $USER_NAME:$GROUP_NAME $SP_DATA_PATH/media
+chown -R $USER_NAME:$GROUP_NAME $SP_DATA_PATH/library
 
 #Crea l'environment di python
 python3 -m venv $SP_DATA_PATH/env

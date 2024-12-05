@@ -7,7 +7,7 @@ ARG GROUP_ID=1000
 ARG USER_ID=1000
 ENV USER_NAME=www-data
 ARG GROUP_NAME=www-data
-ARG TIMEZONE="Europe/Rome"
+ENV TIMEZONE="Europe/Rome"
 ENV SP_DATA_PATH=/data
 
 # Install system dependencies
