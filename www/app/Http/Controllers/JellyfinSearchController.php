@@ -25,8 +25,8 @@ class JellyfinSearchController extends Controller
         $api = new JellyfinApiManager();
 
         if(in_array(trim($itemType), ["Movie", "Series"])) {
-            sleep(10);
             if (!$isSearching && !$hasResult && !$isMissing) {
+                //sleep(5);
                 Cache::put("jellyfin_searching_" . md5($searchTerm), $searchTerm);
 
                 $search = new ItemsSearchManager($searchTerm);
@@ -34,16 +34,22 @@ class JellyfinSearchController extends Controller
 
                 if (!empty($results)) {
                     $api->startLibraryScan();
-                    $ids = array_map(function ($item) {
-                        return $item->item_imdb_id;
-                    }, $results);
 
-                    sleep(count($ids)*10);
-                    Cache::put("jellyfin_search_" . md5($searchTerm), $ids, Carbon::now()->addHour());
+                    if(str_starts_with($searchTerm, "tt")){
+                        $query['searchTerm'] = @$results[0]->item_title;
+                        Cache::put("jellyfin_tt_" . md5($searchTerm), $query['searchTerm'], Carbon::now()->addDay());
+                    }
+
+                    //sleep(count($results)*20);
+                    Cache::put("jellyfin_search_" . md5($searchTerm), $results, Carbon::now()->addHour());
                 }
 
                 Cache::forget("jellyfin_searching_" . md5($searchTerm));
             }
+        }
+
+        if(Cache::has("jellyfin_tt_".md5($searchTerm))){
+            $query['searchTerm'] = Cache::get("jellyfin_tt_".md5($searchTerm), $searchTerm);
         }
 
         $response = $api->getItems($query);

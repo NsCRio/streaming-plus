@@ -28,39 +28,49 @@ class IMDBApiManager extends AbstractApiManager
         }
 
         $searchResponse = [];
-        $uri = str_replace('{search_term}', urlencode($searchTerm), config('app.imdb.suggestions_url'));
-        $response = Cache::remember('imdb_suggestions_'.md5(urlencode($searchTerm)), Carbon::now()->addDay(), function () use($uri){
-            return $this->apiCall($uri, 'GET', ['includeVideos' => 0]);
-        });
-        if(!empty($response['d'])) {
-            $outcome = array_filter($response['d'], function($item) {
-                return in_array(@$item['qid'], $this->types);
+
+        if(!str_starts_with($searchTerm, "tt")) {
+            $uri = str_replace('{search_term}', urlencode($searchTerm), config('app.imdb.suggestions_url'));
+            $response = Cache::remember('imdb_suggestions_' . md5(urlencode($searchTerm)), Carbon::now()->addDay(), function () use ($uri) {
+                return $this->apiCall($uri, 'GET', ['includeVideos' => 0]);
             });
-            if(isset($type) && in_array($type, $this->types)) {
-                $outcome = array_filter($outcome, function($item) use ($type) {
-                   return @$item['qid'] == $type;
+            if (!empty($response['d'])) {
+                $outcome = array_filter($response['d'], function ($item) {
+                    return in_array(@$item['qid'], $this->types);
                 });
-            }
-            $outcome = array_values(array_slice($outcome, 0, $limit));
-            if(!empty($outcome)) {
-                foreach($outcome as $item) {
-                    if(isset($item['id']) && trim($item['id']) !== "" &&
-                        isset($item['qid']) && trim($item['qid']) !== "") {
-                        $searchItem = ItemsManager::getImdbDataFromLocalStorage($item['id'], $item['qid']);
-                        if(empty($searchItem)){
-                            $searchItem = [
-                                'id' => $item['id'],
-                                'title' => @$item['l'],
-                                'poster' => @$item['i']['imageUrl'],
-                                'type' => @$item['qid'],
-                                'year' => @$item['y'],
-                            ];
-                            $searchItem = array_merge($searchItem, $this->getTitleDetails($searchItem['id']));
+                if (isset($type) && in_array($type, $this->types)) {
+                    $outcome = array_filter($outcome, function ($item) use ($type) {
+                        return @$item['qid'] == $type;
+                    });
+                }
+                $outcome = array_values(array_slice($outcome, 0, $limit));
+                if (!empty($outcome)) {
+                    foreach ($outcome as $item) {
+                        if (isset($item['id']) && trim($item['id']) !== "" &&
+                            isset($item['qid']) && trim($item['qid']) !== "") {
+                            $searchItem = ItemsManager::getImdbDataFromLocalStorage($item['id'], $item['qid']);
+                            if (empty($searchItem)) {
+                                $searchItem = [
+                                    'id' => $item['id'],
+                                    'imdb_id' => $item['id'],
+                                    'title' => @$item['l'],
+                                    'poster' => @$item['i']['imageUrl'],
+                                    'type' => @$item['qid'],
+                                    'year' => @$item['y'],
+                                ];
+                                $searchItem = array_merge($searchItem, $this->getTitleDetails($searchItem['id']));
+                            }
+                            ItemsManager::putImdbDataToLocalStorage($searchItem);
+                            $searchResponse[] = $searchItem;
                         }
-                        ItemsManager::putImdbDataToLocalStorage($searchItem);
-                        $searchResponse[] = $searchItem;
                     }
                 }
+            }
+        }else{
+            $searchItem = $this->getTitleDetails($searchTerm);
+            if(!empty($searchItem)){
+                ItemsManager::putImdbDataToLocalStorage($searchItem);
+                $searchResponse[] = $searchItem;
             }
         }
 
@@ -109,7 +119,9 @@ class IMDBApiManager extends AbstractApiManager
             $productionStatus = @$titleData['productionStatus']['currentProductionStage']['text'];
 
             $searchItem = [
+                'id' => $imdbId,
                 'imdb_id' => $imdbId,
+                'type' => @$titleData['titleType']['id'],
                 'plot' => @$titleData['plot']['plotText']['plainText'],
                 'outline' => @$titleData['plot']['plotText']['plainText'],
                 'dateadded' => Carbon::now()->format('Y-m-d H:i:s'),

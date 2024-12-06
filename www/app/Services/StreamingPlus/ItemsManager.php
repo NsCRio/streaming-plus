@@ -19,7 +19,7 @@ class ItemsManager
     public static function imdbDataToDatabase(array $imdbData) : null|Items {
         if(!empty($imdbData) && isset($imdbData['id'])){
             $item = Items::query()->where('item_imdb_id', $imdbData['id'])->first();
-            if(!$item) {
+            if(!isset($item)) {
                 $item = new Items();
                 $item->item_imdb_id = @$imdbData['id'];
                 $item->item_category = @$imdbData['type'];
