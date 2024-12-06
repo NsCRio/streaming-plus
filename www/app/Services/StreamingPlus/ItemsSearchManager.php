@@ -38,13 +38,17 @@ class ItemsSearchManager
      */
     public function searchOnLocal(): ItemsSearchManager
     {
-        $query = Items::query()
-            ->whereField('imdb_id', 'like', "%{$this->searchTerm}%")
-            ->orWhereField('title', 'like', "%{$this->searchTerm}%")
-            ->orWhereField('original_title', 'like', "%{$this->searchTerm}%")
-            ->where('updated_at', '>=', Carbon::now()->subDay());
+        $query = Items::query()->where(function($query){
+            $query->where('item_imdb_id', 'like', "%{$this->searchTerm}%")
+                ->orWhere('item_title', 'like', "%{$this->searchTerm}%")
+                ->orWhere('item_original_title', 'like', "%{$this->searchTerm}%")
+                ->orWhereRaw("REPLACE(item_title, '-', ' ') LIKE '%{$this->searchTerm}%'")
+                ->orWhereRaw("REPLACE(item_original_title, '-', ' ') LIKE '%{$this->searchTerm}%'")
+                ->orWhereRaw("REPLACE(item_title, '-', '') LIKE '%{$this->searchTerm}%'")
+                ->orWhereRaw("REPLACE(item_original_title, '-', '') LIKE '%{$this->searchTerm}%'");
+            })->where('updated_at', '>=', Carbon::now()->subDay());
         if(isset($this->itemType))
-            $query->whereField('item_type', $this->itemType);
+            $query->where('item_category', $this->itemType);
 
         $results = [];
         if($query->count() > 0){

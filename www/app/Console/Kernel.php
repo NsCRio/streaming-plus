@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Console\Commands\ClearLibraryCommand;
 use App\Console\Commands\IMDbDatasetRetriever;
 use App\Console\Commands\InitCommand;
 use App\Console\Commands\JellyfinSetupCommand;
@@ -21,6 +22,7 @@ class Kernel extends ConsoleKernel
         TestCommand::class,
 
         //Jellyfin Commands
+        ClearLibraryCommand::class,
         JellyfinSetupCommand::class,
     ];
 
@@ -33,5 +35,6 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command(JellyfinSetupCommand::class)->everyFiveMinutes();
+        //$schedule->command('cache:clear')->everyTwoHours();
     }
 }

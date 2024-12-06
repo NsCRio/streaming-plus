@@ -20,7 +20,7 @@ class IMDBApiManager extends AbstractApiManager
 
     public function __construct(){}
 
-    public function search(string $searchTerm, string $type = null, int $limit = 10, bool $cache = true){
+    public function search(string $searchTerm, string $type = null, int $limit = 3, bool $cache = true){
         if(Cache::has('imdb_search_'.md5($searchTerm.$type.$limit)) && $cache) {
             $searchResponse = Cache::get('imdb_search_' . md5($searchTerm . $type . $limit));
             if (!empty($searchResponse))

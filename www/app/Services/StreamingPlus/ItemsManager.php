@@ -16,23 +16,20 @@ class ItemsManager
         $this->model = $model;
     }
 
-    public static function imdbDataToDatabase(array $imdData) : null|Items {
-        if(!empty($imdData) && isset($imdData['id'])){
-            $item = Items::query()->whereField('imdb_id', $imdData['id'])->first();
-            if(!isset($item))
+    public static function imdbDataToDatabase(array $imdbData) : null|Items {
+        if(!empty($imdbData) && isset($imdbData['id'])){
+            $item = Items::query()->where('item_imdb_id', $imdbData['id'])->first();
+            if(!$item) {
                 $item = new Items();
-
-            $path = self::putImdbDataToLocalStorage($imdData);
-
-            $item->setField('imdb_id', @$imdData['id']);
-            $item->setField('category', @$imdData['type']);
-            $item->setField('title', @$imdData['title']);
-            $item->setField('original_title', @$imdData['originaltitle']);
-            $item->setField('year', @$imdData['year']);
-            $item->setField('image_url', @$imdData['poster']);
-            $item->setField('path', $path);
+                $item->item_imdb_id = @$imdbData['id'];
+                $item->item_category = @$imdbData['type'];
+                $item->item_title = @$imdbData['title'];
+                $item->item_original_title = @$imdbData['originaltitle'];
+                $item->item_year = @$imdbData['year'];
+                $item->item_image_url = @$imdbData['poster'];
+            }
+            $item->item_path = self::putImdbDataToLocalStorage($imdbData);
             $item->save();
-
             return $item;
         }
         return null;
