@@ -54,6 +54,7 @@ class JellyfinSetupCommand extends Command
         if(!file_exists($tvSeriesPath))
             mkdir($tvSeriesPath, 0777, true);
 
+        sleep(10); //Do il tempo a Jellyfin di avviarsi
         $api = new JellyfinApiManager();
 
         $this->info('####### Update Configuration #######');
@@ -76,6 +77,6 @@ class JellyfinSetupCommand extends Command
 
         $this->info("end. (".number_format(microtime(true) - $start, 2)."s)\n");
 
-        return;
+        exit(1);
     }
 }
