@@ -48,7 +48,9 @@ class TestCommand extends Command
         ini_set('default_socket_timeout', 10);
         ini_set('memory_limit', '4000M');
 
-        dd('nessun test');
+        //dd('nessun test');
+        $api = new JellyfinApiManager();
+        dd($api->getPlugins());
 
         $search = new ItemsSearchManager("Deadpool & Wolverine");
         $results = $search->search()->getResults();

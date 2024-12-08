@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Addons\AddonsApiManager;
 use App\Services\Jellyfin\JellyfinApiManager;
 use App\Services\StreamingPlus\ItemsSearchManager;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
-class JellyfinSearchController extends Controller
+class JellyfinController extends Controller
 {
 
     /**
@@ -69,6 +70,26 @@ class JellyfinSearchController extends Controller
             $api = new JellyfinApiManager();
             return $api->getArtists($request->all());
         });
+        return response($response)->header('Content-Type', 'application/json');
+    }
+
+    public function getPlugins(Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+        $api = new JellyfinApiManager();
+        $plugins = $api->getPlugins($request->all());
+
+        $addons = AddonsApiManager::getAddonsFromPlugins();
+        $response = array_merge($plugins, $addons);
+
+        return response($response)->header('Content-Type', 'application/json');
+    }
+
+    public function getPackages(Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+        $api = new JellyfinApiManager();
+        $packages = $api->getPackages($request->all());
+
+        $addons = AddonsApiManager::getAddonsFromPackages();
+        $response = array_merge($packages, $addons);
+
         return response($response)->header('Content-Type', 'application/json');
     }
 }

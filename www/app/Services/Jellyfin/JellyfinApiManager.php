@@ -37,6 +37,24 @@ class JellyfinApiManager extends AbstractApiManager
         return $this->apiCall('/Artists', 'GET', $query);
     }
 
+    public function getPlugins(array $query = []){
+        $query = array_merge($query, ['spCall' => true]);
+        return $this->apiCall('/Plugins', 'GET', $query);
+    }
+
+    public function getPackages(array $query = []){
+        $query = array_merge($query, ['spCall' => true]);
+        return $this->apiCall('/Packages', 'GET', $query);
+    }
+
+    public function getPackagesByName(string $name, array $data){
+        return $this->apiCall('/Packages/'.$name, 'GET', $data);
+    }
+
+    public function getPackagesRepositories(){
+        return $this->apiCall('/Repositories');
+    }
+
     public function getConfiguration(){
         return $this->apiCall('/System/Configuration');
     }
@@ -44,6 +62,10 @@ class JellyfinApiManager extends AbstractApiManager
     public function updateConfiguration(array $configuration){
         $data = array_merge($this->getConfiguration(), $configuration);
         return $this->apiCall('/System/Configuration', 'POST_BODY', $data);
+    }
+
+    public function getSystemInfo(){
+        return $this->apiCall('/System/Info');
     }
 
     public function getBranding(){
@@ -96,7 +118,36 @@ class JellyfinApiManager extends AbstractApiManager
         return $this->apiCall('/Library/Refresh?'.http_build_query(['spCall' => true]), 'POST');
     }
 
-    private function getAccessToken(){
+    public function createUserIfNotExist(string $username, string $password){
+        $users = $this->getUsers();
+        $user = collect($users)->where('Name', $username)->first();
+        if(!isset($user)) {
+            $data = [
+                'Name' => $username,
+                'Password' => $password,
+            ];
+            $user = $this->apiCall('/Users/New', 'POST_BODY', $data);
+        }
+        return $user;
+    }
+
+    public function getUsers(){
+        return $this->apiCall('/Users', 'GET');
+    }
+
+    public function authenticateUser(string $username, string $password){
+        $data = [
+            'Username' => $username,
+            'Pw' => $password,
+        ];
+        return $this->apiCall('/Users/AuthenticateByName', 'POST_BODY', $data);
+    }
+
+    public function updateUserPolicy(string $userId, array $data){
+        return $this->apiCall('/Users/'.$userId.'/Policy', 'POST_JSON', $data);
+    }
+
+    public function getAccessToken(){
         try {
             $apikey = ApiKeys::query()->where('Name', 'streaming-plus')
                 ->orderBy('DateCreated')->first();
