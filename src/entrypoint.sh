@@ -47,9 +47,9 @@ php /var/www/artisan migrate
 #Customizzazioni Jellyfin
 if [ -d /usr/share/jellyfin/web ]; then
   cp -r /var/src/img/* /usr/share/jellyfin/web/assets/img
-  cp /var/src/jellyfin/jellyfin/config/network.xml $SP_DATA_PATH/jellyfin/config/network.xml
+  cp /var/src/jellyfin/config/network.xml $SP_DATA_PATH/jellyfin/config/network.xml
   if [ ! -f $SP_DATA_PATH/jellyfin/config/branding.xml ]; then
-    cp /var/src/jellyfin/jellyfin/config/branding.xml $SP_DATA_PATH/jellyfin/config/branding.xml
+    cp /var/src/jellyfin/config/branding.xml $SP_DATA_PATH/jellyfin/config/branding.xml
   fi
 fi
 
