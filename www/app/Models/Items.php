@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\IMDB\IMDBApiManager;
 use App\Services\Items\ItemsManager;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
@@ -18,6 +19,10 @@ class Items extends Model
             $json = sp_data_path($this->item_path.'/'.$this->item_imdb_id.'.json');
             if(file_exists($json))
                 $imdbData = json_decode(file_get_contents($json), true);
+        }
+        if(empty($imdbData)){
+            $api = new IMDBApiManager();
+            $imdbData = $api->getTitleDetails($this->item_imdb_id);
         }
         return $imdbData;
     }
