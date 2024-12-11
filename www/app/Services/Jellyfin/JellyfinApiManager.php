@@ -12,15 +12,14 @@ use Illuminate\Support\Str;
 
 class JellyfinApiManager extends AbstractApiManager
 {
-    protected $endpoint, $accessToken;
+    protected $endpoint, $headers, $accessToken;
 
-    public function __construct(string $accessToken = null){
+    public function __construct(array $headers = []){
         $this->endpoint = config('jellyfin.url');
+        $this->headers = request()->headers->all();
 
-        if(is_null($accessToken))
-            $accessToken = $this->getAccessToken();
-
-        $this->accessToken = $accessToken;
+        if(!empty($headers))
+            $this->headers = $headers;
     }
 
     public function getItems(array $query = []){
@@ -127,38 +126,62 @@ class JellyfinApiManager extends AbstractApiManager
         return $this->apiCall('/Library/VirtualFolders');
     }
 
-    public function addVirtualFolder(string $folderName, string $collectionType){
+    public function addVirtualFolder(string $folderName, string $folderPath, string $collectionType, array $data = []){
         $query = [
             'name' => $folderName,
             'collectionType' => $collectionType,
-            'refreshLibrary' => "true"
         ];
-        $data = ($collectionType == "movies") ? Movies::$FOLDER_CONFIG : TVSeries::$FOLDER_CONFIG;
-        return $this->apiCall('/Library/VirtualFolders?'.http_build_query($query), 'POST_BODY', $data);
+        if(empty($data)){
+            $data = ($collectionType == "movies") ? Movies::$FOLDER_CONFIG : TVSeries::$FOLDER_CONFIG;
+            $data['collectionType'] = $collectionType;
+            $data['name'] = $folderName;
+            $data['LibraryOptions']['PathInfos'][0]['Path'] = $folderPath;
+        }
+        return $this->apiCall('/Library/VirtualFolders?'.http_build_query($query), 'POST_JSON', $data);
     }
 
-    public function removeVirtualFolder(string $folderName, bool $refreshLibrary = true){
-        $query = [
-            'name' => $folderName,
-            'refreshLibrary' => $refreshLibrary
-        ];
+    public function createVirtualFolder(array $query, array $data = []){
+        return $this->apiCall('/Library/VirtualFolders?'.http_build_query($query), 'POST_JSON', $data);
+    }
+
+    public function deleteVirtualFolder(string $folderName){
+        $query = ['name' => $folderName];
         return $this->apiCall('/Library/VirtualFolders?'.http_build_query($query), 'DELETE');
     }
 
-    public function createVirtualFolderIfNotExist(string $folderName, string $collectionType){
+    public function createVirtualFolderIfNotExist(string $folderName, string $folderPath, string $collectionType){
         $virtualFolders = $this->getVirtualFolders();
         if(!empty($virtualFolders)){
-            $virtualFolder = collect($virtualFolders)
-                ->where('Name', $folderName)
-                ->where('CollectionType', $collectionType)
-                ->first();
-            if(isset($virtualFolder))
-                return $virtualFolder;
+            $virtualFolders = array_filter(array_map(function($folder) use($folderPath){
+                return in_array($folderPath, $folder['Locations']) ? $folder : null;
+            }, $virtualFolders));
+            if(!empty($virtualFolders))
+                return $virtualFolders[array_key_first($virtualFolders)];
         }
-        $this->addVirtualFolder($folderName, $collectionType);
+        $this->addVirtualFolder($folderName, $folderPath, $collectionType);
         $virtualFolders = $this->getVirtualFolders();
         return collect($virtualFolders)->where('Name', $folderName)
             ->where('CollectionType', $collectionType)->first();
+    }
+
+    public function deleteVirtualFolderIfNotPrimary(string $folderName = null){
+        if(isset($folderName)) {
+            $virtualFolders = $this->getVirtualFolders();
+            $virtualFolders = array_filter(array_map(function ($folder) use($folderName){
+                return md5($folder['Name']) == md5($folderName) ? $folder : null;
+            }, $virtualFolders));
+
+            if(!empty($virtualFolders)){
+                $virtualFolder = $virtualFolders[array_key_first($virtualFolders)];
+
+                if(in_array(config('jellyfin.movies_path'), $virtualFolder['Locations']) ||
+                    in_array(config('jellyfin.series_path'), $virtualFolder['Locations']))
+                    return [];
+
+                return $this->deleteVirtualFolder($virtualFolder['Name']);
+            }
+        }
+        return [];
     }
 
     public function reportsNewMovieAdded(string $imdbId){
@@ -189,6 +212,14 @@ class JellyfinApiManager extends AbstractApiManager
         return $this->apiCall('/Users', 'GET');
     }
 
+    public function getStartupUser(){
+        return $this->apiCall('/Startup/User?'.http_build_query(['spCall' => true]), 'GET');
+    }
+
+    public function postStartupUsers(array $data = []){
+        return $this->apiCall('/Startup/User?'.http_build_query(['spCall' => true]), 'POST_JSON', $data);
+    }
+
     public function authenticateUser(string $username, string $password){
         $data = [
             'Username' => $username,
@@ -201,31 +232,14 @@ class JellyfinApiManager extends AbstractApiManager
         return $this->apiCall('/Users/'.$userId.'/Policy', 'POST_JSON', $data);
     }
 
-    public function getAccessToken(){
-        return Cache::remember('jellyfin_apikey', Carbon::now()->addDays(7), function () {
-            try {
-                $apikey = ApiKeys::query()->where('Name', 'streaming-plus')
-                    ->orderBy('DateCreated')->first();
-                if (!isset($apikey)) {
-                    $apikey = new ApiKeys();
-                    $apikey->DateCreated = Carbon::now()->format('Y-m-d H:i:s.u') . '0';
-                    $apikey->DateLastActivity = Carbon::now()->format('Y-m-d H:i:s');
-                    $apikey->Name = "streaming-plus";
-                    $apikey->AccessToken = md5("streaming-plus-" . Str::random());
-                    $apikey->save();
-                }
-                return $apikey->AccessToken;
-            } catch (\Exception $e) {
-            }
-            return null;
-        });
-    }
-
     protected function apiCall(string $uri, string $method = 'GET', array $data = [], array $headers = [], $returnBody = false) : array|null {
         $default_headers = [
-            'Content-Type' => 'application/json',
-            'X-Emby-Token' => $this->accessToken
+            'Content-Type' => 'application/json'
         ];
+
+        if(!empty($this->headers))
+            $default_headers = $this->headers;
+
         $headers = array_merge($default_headers, $headers);
         return parent::apiCall($uri, $method, $data, $headers);
     }

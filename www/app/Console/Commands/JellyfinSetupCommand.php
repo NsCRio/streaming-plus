@@ -45,24 +45,14 @@ class JellyfinSetupCommand extends Command
         ini_set('default_socket_timeout', 10);
         ini_set('memory_limit', '4000M');
 
-        $moviesPath = sp_data_path('library/movies');
-        $tvSeriesPath = sp_data_path('library/tvSeries');
-
-        if(!file_exists($moviesPath))
-            mkdir($moviesPath, 0777, true);
-
-        if(!file_exists($tvSeriesPath))
-            mkdir($tvSeriesPath, 0777, true);
-
-        sleep(40); //Do il tempo a Jellyfin di avviarsi
         $api = new JellyfinApiManager();
 
         $this->info('####### Update Configuration #######');
         $api->updateConfiguration([
             'ServerName' => "Streaming Plus #".crc32(env('HOSTNAME')),
-            'PreferredMetadataLanguage' => env('LANG', 'en'),
-            'MetadataCountryCode' => strtoupper(env('LANG', 'en')),
-            'UICulture' => strtolower(env('LANG', 'en')),
+            //'PreferredMetadataLanguage' => env('LANG', 'en'),
+            //'MetadataCountryCode' => strtoupper(env('LANG', 'en')),
+            //'UICulture' => strtolower(env('LANG', 'en')),
         ]);
         $api->updateBranding([
             'CustomCss' => "",
@@ -71,8 +61,17 @@ class JellyfinSetupCommand extends Command
         ]);
 
         $this->info('####### Create library folders #######');
-        $api->createVirtualFolderIfNotExist("Movies", "movies");
-        $api->createVirtualFolderIfNotExist("TV Series", "tvshows");
+
+        foreach (config('jellyfin.virtualFolders') as $virtualFolder){
+            if(!file_exists($virtualFolder['path']))
+                mkdir($virtualFolder['path'], 0777, true);
+
+            system("chown -R ".env('USER_NAME').":".env('USER_NAME')." ".$virtualFolder['path']);
+            $api->createVirtualFolderIfNotExist($virtualFolder['name'], $virtualFolder['path'], $virtualFolder['type']);
+        }
+
+        system("chown -R ".env('USER_NAME').":".env('USER_NAME')." ".sp_data_path('/jellyfin'), $result);
+        system("chown -R ".env('USER_NAME').":".env('USER_NAME')." ".sp_data_path('/library'), $result);
 
         //$api->startLibraryScan();
         $this->info("end. (".number_format(microtime(true) - $start, 2)."s)\n");

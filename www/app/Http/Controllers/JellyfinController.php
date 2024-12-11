@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Items;
+use App\Models\Users;
 use App\Services\Addons\AddonsApiManager;
 use App\Services\Jellyfin\JellyfinApiManager;
 use App\Services\Jellyfin\JellyfinManager;
@@ -150,7 +151,7 @@ class JellyfinController extends Controller
 
 
     /*
-     * Other Routes
+     * Library Routes
      */
 
     public function getPersons(Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
@@ -186,6 +187,72 @@ class JellyfinController extends Controller
         $addons = AddonsApiManager::getAddonsFromPackages();
         $response = array_merge($packages, $addons);
 
+        return response($response)->header('Content-Type', 'application/json');
+    }
+
+
+    /*
+     * Other Routes
+     */
+
+    public function getStartupUser(Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+        $api = new JellyfinApiManager();
+        $info = $api->getSystemInfo();
+        $response = $api->getStartupUser();
+        $user = Users::query()->where('user_jellyfin_server_id', $info['Id'])->first();
+        if(isset($user)){
+            $response = [
+                'Name' => $user->user_jellyfin_username,
+                'Password' => $user->user_jellyfin_password,
+            ];
+        }
+        return response($response)->header('Content-Type', 'application/json');
+    }
+
+    public function postStartupUser(Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+        $api = new JellyfinApiManager();
+        $info = $api->getSystemInfo();
+
+        $user = Users::query()->where('user_jellyfin_username', $request->get('Name'))
+            ->where('user_jellyfin_server_id', $info['Id'])->first();
+        if(!isset($user)){
+            $user = new Users();
+            $user->user_jellyfin_username = $request->get('Name');
+            $user->user_jellyfin_server_id = $info['Id'];
+        }
+        $user->user_jellyfin_password = $request->get('Password');
+        $user->save();
+
+        $response = $api->postStartupUsers($request->all());
+        return response($response)->header('Content-Type', 'application/json');
+    }
+
+    public function getVirtualFolders(Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+        $api = new JellyfinApiManager();
+
+        foreach (config('jellyfin.virtualFolders') as $virtualFolder){
+            if(!file_exists($virtualFolder['path']))
+                mkdir($virtualFolder['path'], 0777, true);
+
+            system("chown -R ".env('USER_NAME').":".env('USER_NAME')." ".$virtualFolder['path']);
+            $api->createVirtualFolderIfNotExist($virtualFolder['name'], $virtualFolder['path'], $virtualFolder['type']);
+        }
+
+        system("chown -R ".env('USER_NAME').":".env('USER_NAME')." ".sp_data_path('/jellyfin'));
+
+        $response = $api->getVirtualFolders();
+        return response($response)->header('Content-Type', 'application/json');
+    }
+
+    public function postVirtualFolders(Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+        $api = new JellyfinApiManager();
+        $response = $api->createVirtualFolder($request->query(), $request->all());
+        return response($response)->header('Content-Type', 'application/json');
+    }
+
+    public function deleteVirtualFolders(Request $request) : \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+        $api = new JellyfinApiManager();
+        $response = $api->deleteVirtualFolderIfNotPrimary($request->get('name'));
         return response($response)->header('Content-Type', 'application/json');
     }
 }

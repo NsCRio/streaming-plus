@@ -44,7 +44,7 @@ class AbstractApiManager
             }
             return $response;
         }catch (\GuzzleHttp\Exception\ClientException $e){
-            //dd($e->getResponse());
+            //dd($e->getResponse(), $e->getMessage(), $e->getResponse()->getBody()->getContents());
         }
         return null;
     }

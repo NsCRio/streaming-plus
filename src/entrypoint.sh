@@ -47,16 +47,9 @@ php /var/www/artisan migrate
 #Customizzazioni Jellyfin
 if [ -d /usr/share/jellyfin/web ]; then
   cp -r /var/src/img/* /usr/share/jellyfin/web/assets/img
-  cp -r /var/src/jellyfin/* $SP_DATA_PATH/jellyfin
-  if [ -f /usr/share/jellyfin/web/wizard-library-html.c936a3ba853fe86d51e9.chunk.js ]; then
-      DIV_1='<div id="divVirtualFolders"><\/div>'
-      DIV_2='<div id="divVirtualFolders" style="display:none;"><\/div><div>Skipped by Streaming Plus, you can add your local libraries at a later time.<\/div>'
-      sed -i -e "s/$DIV_1/$DIV_2/g" /usr/share/jellyfin/web/wizard-library-html.c936a3ba853fe86d51e9.chunk.js
-  fi
-  if [ -f /usr/share/jellyfin/web/56213.25f8c1cbba4b1e7f7282.chunk.js ]; then
-      DIV_1='<a id="button-createLibrary" class="button-link">'
-      DIV_2='<a id="button-createLibrary" class="button-link" style="display: none;">'
-      sed -i -e "s/$DIV_1/$DIV_2/g" /usr/share/jellyfin/web/56213.25f8c1cbba4b1e7f7282.chunk.js
+  cp /var/src/jellyfin/jellyfin/config/network.xml $SP_DATA_PATH/jellyfin/config/network.xml
+  if [ ! -f $SP_DATA_PATH/jellyfin/config/branding.xml ]; then
+    cp /var/src/jellyfin/jellyfin/config/branding.xml $SP_DATA_PATH/jellyfin/config/branding.xml
   fi
 fi
 

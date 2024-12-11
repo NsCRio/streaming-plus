@@ -7,7 +7,7 @@ class Movies
     public static $FOLDER_CONFIG = [
         'LibraryOptions' => [
             'Enabled' => true,
-            'EnableArchiveMediaFiles' => false, //Valutare
+            'EnableArchiveMediaFiles' => false,
             'EnablePhotos' => true,
             'EnableRealtimeMonitor' => true,
             'EnableLUFSScan' => true,
@@ -19,8 +19,8 @@ class Movies
             "EnableInternetProviders" => true,
             "SaveLocalMetadata" => true,
             "EnableAutomaticSeriesGrouping" => false,
-            "PreferredMetadataLanguage" => "it", //TODO sostituire con la lingua dell'env
-            "MetadataCountryCode" => "IT",
+            "PreferredMetadataLanguage" => "",
+            "MetadataCountryCode" => "",
             "SeasonZeroDisplayName" => "Specials",
             "AutomaticRefreshIntervalDays" => 60,
             "EnableEmbeddedTitles" => false,

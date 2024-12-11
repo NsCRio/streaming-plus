@@ -34,7 +34,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command(JellyfinSetupCommand::class)->everyFiveMinutes();
+        //$schedule->command(JellyfinSetupCommand::class)->everyFiveMinutes();
         //$schedule->command('cache:clear')->everyTwoHours();
     }
 }

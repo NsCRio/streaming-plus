@@ -27,6 +27,13 @@ $router->get('/jellyfin', function () use ($router) {
 $router->get('/stream', ['as'=> 'stream', 'uses'=>'StreamController@getStream']);
 
 //Jellyfin Proxed Routes
+$router->get('/Startup/User',                                   ['as'=> 'jellyfin.startup_user', 'uses'=>'JellyfinController@getStartupUser']);
+$router->post('/Startup/User',                                  ['as'=> 'jellyfin.startup_user', 'uses'=>'JellyfinController@postStartupUser']);
+
+$router->get('/Library/VirtualFolders',                         ['as'=> 'jellyfin.virtual_folders', 'uses'=>'JellyfinController@getVirtualFolders']);
+$router->post('/Library/VirtualFolders',                        ['as'=> 'jellyfin.virtual_folders.create', 'uses'=>'JellyfinController@postVirtualFolders']);
+$router->delete('/Library/VirtualFolders',                      ['as'=> 'jellyfin.virtual_folders.delete', 'uses'=>'JellyfinController@deleteVirtualFolders']);
+
 $router->get('/Items',                                          ['as'=> 'jellyfin.items', 'uses'=>'JellyfinController@getItems']);
 $router->get('/Items/{itemId}',                                 ['as'=> 'jellyfin.items.detail', 'uses'=>'JellyfinController@getItem']);
 $router->delete('/Items/{itemId}',                              ['as'=> 'jellyfin.items.delete', 'uses'=>'JellyfinController@deleteItem']);

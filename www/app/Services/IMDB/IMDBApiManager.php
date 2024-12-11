@@ -20,7 +20,7 @@ class IMDBApiManager extends AbstractApiManager
 
     public function __construct(){}
 
-    public function search(string $searchTerm, string $type = null, int $limit = 10, bool $cache = true){
+    public function search(string $searchTerm, string $type = null, int $limit = -1, bool $cache = true){
         if(Cache::has('imdb_search_'.md5($searchTerm.$type.$limit)) && $cache) {
             $searchResponse = Cache::get('imdb_search_' . md5($searchTerm . $type . $limit));
             if (!empty($searchResponse))
@@ -43,7 +43,8 @@ class IMDBApiManager extends AbstractApiManager
                         return @$item['qid'] == $type;
                     });
                 }
-                $outcome = array_values(array_slice($outcome, 0, $limit));
+                if($limit > 0)
+                    $outcome = array_values(array_slice($outcome, 0, $limit));
                 if (!empty($outcome)) {
                     foreach ($outcome as $item) {
                         if (isset($item['id']) && trim($item['id']) !== "" &&
@@ -59,10 +60,10 @@ class IMDBApiManager extends AbstractApiManager
                                     'type' => @$item['qid'],
                                     'year' => @$item['y'],
                                 ];
-                                $searchItem = array_merge($searchItem, $this->getTitleDetails($searchItem['id']));
+                                //$searchItem = array_merge($searchItem, $this->getTitleDetails($searchItem['id']));
                             }
 
-                            Cache::put('imdb_item_'.md5($searchItem['imdb_id']), $searchItem, Carbon::now()->addDay());
+                            //Cache::put('imdb_item_'.md5($searchItem['imdb_id']), $searchItem, Carbon::now()->addDay());
                             $searchResponse[] = $searchItem;
                         }
                     }
@@ -220,7 +221,7 @@ class IMDBApiManager extends AbstractApiManager
                 if (!empty($script)) {
                     $this->apiKey = Str::between($script, '/_next/static/', '/_buildManifest.js');
                     if (!empty($this->apiKey))
-                        Cache::put('imdb_apikey', $this->apiKey, Carbon::now()->addHours(6));
+                        Cache::put('imdb_apikey', $this->apiKey, Carbon::now()->addHour());
                 }
             }
         }
