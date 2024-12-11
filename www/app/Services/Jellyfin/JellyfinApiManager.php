@@ -14,7 +14,7 @@ class JellyfinApiManager extends AbstractApiManager
     protected $endpoint, $accessToken;
 
     public function __construct(string $accessToken = null){
-        $this->endpoint = "http://localhost:8097";
+        $this->endpoint = config('jellyfin.url');
 
         if(is_null($accessToken))
             $accessToken = $this->getAccessToken();

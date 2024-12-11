@@ -3,8 +3,8 @@ FROM php:8.2-fpm
 ARG WORKDIR=/var/www
 ENV DOCUMENT_ROOT=${WORKDIR}
 ENV CLIENT_MAX_BODY_SIZE=15M
-ARG GROUP_ID=1000
-ARG USER_ID=1000
+ARG GUID=1000
+ARG PUID=1000
 ENV USER_NAME=www-data
 ARG GROUP_NAME=www-data
 ENV TIMEZONE="Europe/Rome"
@@ -83,8 +83,8 @@ RUN mkdir -p /var/log/supervisor && \
     mkdir -p /var/cache/jellyfin
 
 # Create the www-data user
-RUN usermod -u ${USER_ID} ${USER_NAME}
-RUN groupmod -g ${USER_ID} ${GROUP_NAME}
+RUN usermod -u ${PUID} ${USER_NAME}
+RUN groupmod -g ${PUID} ${GROUP_NAME}
 
 # Change folder permissions
 RUN chown -R ${USER_NAME}:${GROUP_NAME} /var/www && \
@@ -107,5 +107,5 @@ RUN chown -R ${USER_NAME}:${GROUP_NAME} /var/www && \
 
 # End of process
 #USER ${USER_NAME}
-EXPOSE 8095 8097
+EXPOSE 8096
 ENTRYPOINT ["entrypoint.sh"]

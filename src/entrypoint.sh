@@ -34,6 +34,7 @@ cp /var/src/default.conf /etc/nginx/conf.d/
 mkdir -p $SP_DATA_PATH/app
 mkdir -p $SP_DATA_PATH/jellyfin
 mkdir -p $SP_DATA_PATH/jellyfin/cache
+mkdir -p $SP_DATA_PATH/jellyfin/config
 mkdir -p $SP_DATA_PATH/library
 #mkdir -p $SP_DATA_PATH/env
 
@@ -46,6 +47,7 @@ php /var/www/artisan migrate
 #Customizzazioni Jellyfin
 if [ -d /usr/share/jellyfin/web ]; then
   cp -r /var/src/img/* /usr/share/jellyfin/web/assets/img
+  cp -r /var/src/jellyfin/* $SP_DATA_PATH/jellyfin
   if [ -f /usr/share/jellyfin/web/wizard-library-html.c936a3ba853fe86d51e9.chunk.js ]; then
       DIV_1='<div id="divVirtualFolders"><\/div>'
       DIV_2='<div id="divVirtualFolders" style="display:none;"><\/div><div>Skipped by Streaming Plus, you can add your local libraries at a later time.<\/div>'
