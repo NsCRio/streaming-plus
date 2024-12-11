@@ -7,6 +7,7 @@ use App\Services\Api\AbstractApiManager;
 use App\Services\Jellyfin\lib\Movies;
 use App\Services\Jellyfin\lib\TVSeries;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class JellyfinApiManager extends AbstractApiManager
@@ -201,20 +202,23 @@ class JellyfinApiManager extends AbstractApiManager
     }
 
     public function getAccessToken(){
-        try {
-            $apikey = ApiKeys::query()->where('Name', 'streaming-plus')
-                ->orderBy('DateCreated')->first();
-            if (!isset($apikey)){
-                $apikey = new ApiKeys();
-                $apikey->DateCreated = Carbon::now()->format('Y-m-d H:i:s.u') . '0';
-                $apikey->DateLastActivity = Carbon::now()->format('Y-m-d H:i:s');
-                $apikey->Name = "streaming-plus";
-                $apikey->AccessToken = md5("streaming-plus-".Str::random());
-                $apikey->save();
+        return Cache::remember('jellyfin_apikey', Carbon::now()->addDays(7), function () {
+            try {
+                $apikey = ApiKeys::query()->where('Name', 'streaming-plus')
+                    ->orderBy('DateCreated')->first();
+                if (!isset($apikey)) {
+                    $apikey = new ApiKeys();
+                    $apikey->DateCreated = Carbon::now()->format('Y-m-d H:i:s.u') . '0';
+                    $apikey->DateLastActivity = Carbon::now()->format('Y-m-d H:i:s');
+                    $apikey->Name = "streaming-plus";
+                    $apikey->AccessToken = md5("streaming-plus-" . Str::random());
+                    $apikey->save();
+                }
+                return $apikey->AccessToken;
+            } catch (\Exception $e) {
             }
-            return $apikey->AccessToken;
-        }catch (\Exception $e){}
-        return null;
+            return null;
+        });
     }
 
     protected function apiCall(string $uri, string $method = 'GET', array $data = [], array $headers = [], $returnBody = false) : array|null {

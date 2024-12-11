@@ -54,7 +54,7 @@ class JellyfinSetupCommand extends Command
         if(!file_exists($tvSeriesPath))
             mkdir($tvSeriesPath, 0777, true);
 
-        sleep(30); //Do il tempo a Jellyfin di avviarsi
+        sleep(40); //Do il tempo a Jellyfin di avviarsi
         $api = new JellyfinApiManager();
 
         $this->info('####### Update Configuration #######');
@@ -74,9 +74,7 @@ class JellyfinSetupCommand extends Command
         $api->createVirtualFolderIfNotExist("Movies", "movies");
         $api->createVirtualFolderIfNotExist("TV Series", "tvshows");
 
-        $api->startLibraryScan();
-
-        sleep(20);
+        //$api->startLibraryScan();
         $this->info("end. (".number_format(microtime(true) - $start, 2)."s)\n");
 
         exit(1);

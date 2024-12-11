@@ -47,6 +47,9 @@ RUN curl -fsSL https://repo.jellyfin.org/debian/jellyfin_team.gpg.key | gpg --de
     echo "deb [signed-by=/usr/share/keyrings/jellyfin.gpg] https://repo.jellyfin.org/debian $(lsb_release -cs) main" > /etc/apt/sources.list.d/jellyfin.list && \
     apt-get update && apt-get install -y jellyfin
 
+# Install Torrent Stream Server
+RUN npm install -g torrent-stream-server
+
 # Set working directory
 WORKDIR $WORKDIR
 
