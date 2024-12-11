@@ -3,7 +3,7 @@
 namespace App\Services\IMDB;
 
 use App\Services\Api\AbstractApiManager;
-use App\Services\StreamingPlus\ItemsManager;
+use App\Services\Items\ItemsManager;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -20,7 +20,7 @@ class IMDBApiManager extends AbstractApiManager
 
     public function __construct(){}
 
-    public function search(string $searchTerm, string $type = null, int $limit = 3, bool $cache = true){
+    public function search(string $searchTerm, string $type = null, int $limit = 10, bool $cache = true){
         if(Cache::has('imdb_search_'.md5($searchTerm.$type.$limit)) && $cache) {
             $searchResponse = Cache::get('imdb_search_' . md5($searchTerm . $type . $limit));
             if (!empty($searchResponse))
@@ -30,7 +30,7 @@ class IMDBApiManager extends AbstractApiManager
         $searchResponse = [];
 
         if(!str_starts_with($searchTerm, "tt")) {
-            $uri = str_replace('{search_term}', urlencode($searchTerm), config('app.imdb.suggestions_url'));
+            $uri = str_replace('{search_term}', urlencode($searchTerm), config('imdb.suggestions_url'));
             $response = Cache::remember('imdb_suggestions_' . md5(urlencode($searchTerm)), Carbon::now()->addDay(), function () use ($uri) {
                 return $this->apiCall($uri, 'GET', ['includeVideos' => 0]);
             });
@@ -48,7 +48,8 @@ class IMDBApiManager extends AbstractApiManager
                     foreach ($outcome as $item) {
                         if (isset($item['id']) && trim($item['id']) !== "" &&
                             isset($item['qid']) && trim($item['qid']) !== "") {
-                            $searchItem = ItemsManager::getImdbDataFromLocalStorage($item['id'], $item['qid']);
+
+                            $searchItem = Cache::get('imdb_item_'.md5($item['id']), []);
                             if (empty($searchItem)) {
                                 $searchItem = [
                                     'id' => $item['id'],
@@ -60,7 +61,8 @@ class IMDBApiManager extends AbstractApiManager
                                 ];
                                 $searchItem = array_merge($searchItem, $this->getTitleDetails($searchItem['id']));
                             }
-                            ItemsManager::putImdbDataToLocalStorage($searchItem);
+
+                            Cache::put('imdb_item_'.md5($searchItem['imdb_id']), $searchItem, Carbon::now()->addDay());
                             $searchResponse[] = $searchItem;
                         }
                     }
@@ -68,14 +70,9 @@ class IMDBApiManager extends AbstractApiManager
             }
         }else{
             $searchItem = $this->getTitleDetails($searchTerm);
-            if(!empty($searchItem)){
-                ItemsManager::putImdbDataToLocalStorage($searchItem);
+            if(!empty($searchItem))
                 $searchResponse[] = $searchItem;
-            }
         }
-
-        if(empty($searchResponse)) //Se è vuota la risposta potrebbe essere non valida la key
-            Cache::forget('imdb_apikey');
 
         Cache::put('imdb_search_'.md5($searchTerm.$type.$limit), $searchResponse, Carbon::now()->addDay());
         return $searchResponse;
@@ -83,11 +80,14 @@ class IMDBApiManager extends AbstractApiManager
 
     public function getTitleDetails(string $imdbId){
         $apiKey = $this->getApiKey();
-        $uri = str_replace('{api_key}', $apiKey, config('app.imdb.api_url')).'/'.$imdbId.'.json';
+        $uri = str_replace('{api_key}', $apiKey, config('imdb.api_url')).'/'.$imdbId.'.json';
 
         $response = Cache::remember('imdb_detail_' . md5($imdbId), Carbon::now()->addDay(), function () use ($uri, $imdbId) {
             return $this->apiCall($uri, 'GET');
         });
+
+        if(empty($response)) //Se è vuota la risposta potrebbe essere non valida la key
+            Cache::forget('imdb_apikey');
 
         if(!empty($response) && !empty(@$response['pageProps']['aboveTheFoldData']) && !empty(@$response['pageProps']['mainColumnData'])) {
             unset($response['pageProps']['mainColumnData']['primaryImage']);
@@ -158,7 +158,7 @@ class IMDBApiManager extends AbstractApiManager
 
     public function getTVSeriesSeasons(string $imdbId, int $seasonCount = 1, array $imdbData = []) : array {
         $apiKey = $this->getApiKey();
-        $uri = str_replace('{api_key}', $apiKey, config('app.imdb.api_url')).'/'.$imdbId. "/episodes.json";
+        $uri = str_replace('{api_key}', $apiKey, config('imdb.api_url')).'/'.$imdbId. "/episodes.json";
 
         $outcome = [];
         for($season = 1; $season <= $seasonCount; $season++) {
@@ -210,20 +210,17 @@ class IMDBApiManager extends AbstractApiManager
     }
 
     public function getApiKey(){
+        if(Cache::has('imdb_apikey'))
+            $this->apiKey = Cache::get('imdb_apikey');
         if(empty($this->apiKey)) {
-            if(Cache::has('imdb_apikey'))
-                $this->apiKey = Cache::get('imdb_apikey');
-
-            if(empty($this->apiKey)) {
-                $html = $this->apiCall("https://www.imdb.com", 'GET', [], ['referer' => 'https://www.google.com/'], true);
-                if (!empty($html)) {
-                    $crawler = new Crawler($html);
-                    $script = $crawler->filterXPath('//script[contains(@src, "/_buildManifest.js")]')->attr('src');
-                    if (!empty($script)) {
-                        $this->apiKey = Str::between($script, '/_next/static/', '/_buildManifest.js');
-                        if (!empty($this->apiKey))
-                            Cache::put('imdb_apikey', $this->apiKey, Carbon::now()->addHours(12));
-                    }
+            $html = $this->apiCall("https://www.imdb.com", 'GET', [], ['referer' => 'https://www.google.com/'], true);
+            if (!empty($html)) {
+                $crawler = new Crawler($html);
+                $script = $crawler->filterXPath('//script[contains(@src, "/_buildManifest.js")]')->attr('src');
+                if (!empty($script)) {
+                    $this->apiKey = Str::between($script, '/_next/static/', '/_buildManifest.js');
+                    if (!empty($this->apiKey))
+                        Cache::put('imdb_apikey', $this->apiKey, Carbon::now()->addHours(6));
                 }
             }
         }

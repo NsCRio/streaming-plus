@@ -2,9 +2,9 @@
 
 namespace App\Models\Jellyfin;
 
-use App\Models\lib\AbstractModel;
+use Illuminate\Database\Eloquent\Model;
 
-class ApiKeys extends AbstractModel
+class ApiKeys extends Model
 {
     protected $connection = 'jellyfin';
     protected $primaryKey = 'Id';

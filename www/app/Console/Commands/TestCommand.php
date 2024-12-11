@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 
 use App\Services\IMDB\IMDBApiManager;
 use App\Services\Jellyfin\JellyfinApiManager;
-use App\Services\StreamingPlus\ItemsSearchManager;
+use App\Services\Items\ItemsSearchManager;
 use Illuminate\Console\Command;
 
 class TestCommand extends Command

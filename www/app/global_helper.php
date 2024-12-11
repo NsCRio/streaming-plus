@@ -18,3 +18,42 @@ if (!function_exists('sp_data_path')) {
         //return realpath('/data/'.$path);
     }
 }
+
+if (!function_exists('sp_url')) {
+    function sp_url($path = "", array $query = []){
+        $url = config('app.url');
+        $path = !str_starts_with('/', $path) ? '/' . $path : $path;
+        return $url . $path . '?' . http_build_query($query, '', '&');
+    }
+}
+
+if (!function_exists('jellyfin_url')) {
+    function jellyfin_url($path = "", array $query = []){
+        $url = config('jellyfin.url');
+        $path = !str_starts_with($path, '/') ? '/' . $path : $path;
+        $query = array_merge($query, ['spCall' => true]);
+        return $url . $path . '?' . http_build_query($query, '', '&');
+    }
+}
+
+
+if (!function_exists('remove_dir')) {
+    function remove_dir($path){
+        if(file_exists($path)){
+            system("rm -rf ".escapeshellarg($path));
+        }
+    }
+}
+
+if (!function_exists('save_image')) {
+    function save_image($inPath, $outPath)
+    {
+        $in = fopen($inPath, "rb");
+        $out = fopen($outPath, "wb");
+        while ($chunk = fread($in, 8192)) {
+            fwrite($out, $chunk, 8192);
+        }
+        fclose($in);
+        fclose($out);
+    }
+}

@@ -2,22 +2,47 @@
 
 namespace App\Models;
 
-use App\Models\lib\AbstractModel;
+use App\Services\Items\ItemsManager;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
-class Items extends AbstractModel
+class Items extends Model
 {
     protected $table = 'items';
     protected $primaryKey = 'item_id';
-    protected $fieldPrefix = 'item';
     public $timestamps = true;
 
     public function getImdbData(){
-        if(isset($this->item_path)){
+        $imdbData = Cache::get('imdb_item_' . md5($this->item_imdb_id), []);
+        if(isset($this->item_path) && empty($imdbData)){
             $json = sp_data_path($this->item_path.'/'.$this->item_imdb_id.'.json');
             if(file_exists($json))
-                return json_decode(file_get_contents($json), true);
+                $imdbData = json_decode(file_get_contents($json), true);
         }
-        return [];
+        return $imdbData;
+    }
+
+    public function saveItemToLibrary() : null|string {
+        $imdbData = $this->getImdbData();
+        if(!empty($imdbData)) {
+            $this->item_path = ItemsManager::putImdbDataToLocalStorage($imdbData);
+            $this->save();
+        }
+        return $this->item_path;
+    }
+
+    public function removeFromLibrary(): bool {
+        if(isset($this->item_path)){
+            if(file_exists(sp_data_path($this->item_path))) {
+                try{
+                    remove_dir(sp_data_path($this->item_path));
+                    $this->item_path = null;
+                    $this->item_jellyfin_id = null;
+                    return true;
+                }catch (\Exception $e){}
+            }
+        }
+        return false;
     }
 
 }

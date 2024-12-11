@@ -61,6 +61,8 @@ $app->singleton(
 $app->configure('app');
 $app->configure('database');
 $app->configure('cache');
+$app->configure('jellyfin');
+$app->configure('imdb');
 
 /*
 |--------------------------------------------------------------------------

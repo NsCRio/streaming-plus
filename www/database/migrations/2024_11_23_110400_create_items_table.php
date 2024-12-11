@@ -15,7 +15,8 @@ return new class extends Migration
     {
         Schema::create('items', function (Blueprint $table) {
             $table->increments('item_id');
-            $table->string('item_category')->nullable();
+            $table->string('item_md5')->nullable();
+            $table->string('item_type')->nullable();
             $table->string('item_jellyfin_id')->nullable();
             $table->string('item_imdb_id')->nullable();
             $table->string('item_tmdb_id')->nullable();
@@ -24,6 +25,7 @@ return new class extends Migration
             $table->string('item_original_title')->nullable();
             $table->string('item_year')->nullable();
             $table->string('item_image_url')->nullable();
+            $table->string('item_image_md5')->nullable();
             $table->string('item_path')->nullable();
             $table->timestamps();
         });

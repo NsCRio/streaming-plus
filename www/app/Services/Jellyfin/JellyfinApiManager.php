@@ -27,6 +27,51 @@ class JellyfinApiManager extends AbstractApiManager
         return $this->apiCall('/Items', 'GET', $query);
     }
 
+    public function getItem(string $itemId, array $query = []){
+        $query = array_merge($query, ['spCall' => true]);
+        return $this->apiCall('/Items/'.$itemId, 'GET', $query);
+    }
+
+    public function deleteItem(string $itemId, array $query = []){
+        $query = array_merge($query, ['spCall' => true]);
+        return $this->apiCall('/Items/'.$itemId, 'DELETE', $query);
+    }
+
+    public function getItemImage(string $itemId, string $imageType, array $query = []){
+        $query = array_merge($query, ['spCall' => true]);
+        return $this->apiCall('/Items/'.$itemId.'/Images/'.$imageType, 'GET', $query);
+    }
+
+    public function getItemPlaybackInfo(string $itemId, array $query = []){
+        $query = array_merge($query, ['spCall' => true]);
+        return $this->apiCall('/Items/'.$itemId.'/PlaybackInfo', 'GET', $query);
+    }
+
+    public function getItemThemeMedia(string $itemId, array $query = []){
+        $query = array_merge($query, ['spCall' => true]);
+        return $this->apiCall('/Items/'.$itemId.'/ThemeMedia', 'GET', $query);
+    }
+
+    public function getItemSimilar(string $itemId, array $query = []){
+        $query = array_merge($query, ['spCall' => true]);
+        return $this->apiCall('/Items/'.$itemId.'/Similar', 'GET', $query);
+    }
+
+    public function getUsersItems(string $userId, string $itemId, array $query = []){
+        $query = array_merge($query, ['spCall' => true]);
+        return $this->apiCall('/Users/'.$userId.'/Items/'.$itemId, 'GET', $query);
+    }
+
+    public function setItemFavorite(string $itemId, string $userId){
+        $query = ['userId' => $userId, 'spCall' => true];
+        return $this->apiCall('/UserFavoriteItems/'.$itemId.'?'.http_build_query($query), 'POST_JSON', []);
+    }
+
+    public function removeItemFavorite(string $itemId, string $userId){
+        $query = ['userId' => $userId, 'spCall' => true];
+        return $this->apiCall('/UserFavoriteItems/'.$itemId.'?'.http_build_query($query), 'DELETE', []);
+    }
+
     public function getPersons(array $query = []){
         $query = array_merge($query, ['spCall' => true]);
         return $this->apiCall('/Persons', 'GET', $query);
@@ -89,6 +134,14 @@ class JellyfinApiManager extends AbstractApiManager
         ];
         $data = ($collectionType == "movies") ? Movies::$FOLDER_CONFIG : TVSeries::$FOLDER_CONFIG;
         return $this->apiCall('/Library/VirtualFolders?'.http_build_query($query), 'POST_BODY', $data);
+    }
+
+    public function removeVirtualFolder(string $folderName, bool $refreshLibrary = true){
+        $query = [
+            'name' => $folderName,
+            'refreshLibrary' => $refreshLibrary
+        ];
+        return $this->apiCall('/Library/VirtualFolders?'.http_build_query($query), 'DELETE');
     }
 
     public function createVirtualFolderIfNotExist(string $folderName, string $collectionType){

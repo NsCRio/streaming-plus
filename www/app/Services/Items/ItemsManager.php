@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\StreamingPlus;
+namespace App\Services\Items;
 
 use App\Models\Items;
 use App\Services\Jellyfin\JellyfinManager;
@@ -21,14 +21,16 @@ class ItemsManager
             $item = Items::query()->where('item_imdb_id', $imdbData['id'])->first();
             if(!isset($item)) {
                 $item = new Items();
+                $item->item_md5 = @md5(@$imdbData['id']);
                 $item->item_imdb_id = @$imdbData['id'];
-                $item->item_category = @$imdbData['type'];
+                $item->item_type = @$imdbData['type'];
                 $item->item_title = @$imdbData['title'];
                 $item->item_original_title = @$imdbData['originaltitle'];
                 $item->item_year = @$imdbData['year'];
                 $item->item_image_url = @$imdbData['poster'];
+                $item->item_image_md5 = @md5(@$imdbData['poster']);
             }
-            $item->item_path = self::putImdbDataToLocalStorage($imdbData);
+            //$item->item_path = self::putImdbDataToLocalStorage($imdbData);
             $item->save();
             return $item;
         }

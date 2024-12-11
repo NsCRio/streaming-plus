@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\StreamingPlus;
+namespace App\Services\Items;
 
 use App\Models\Items;
 use App\Services\IMDB\IMDBApiManager;
@@ -18,13 +18,11 @@ class ItemsSearchManager
     /**
      * @throws \Exception
      */
-    public function search($forceOnline = false): static
+    public function search(): static
     {
         if(!empty($this->searchTerm)){
-            if(!$forceOnline)
-                $this->searchOnLocal();
-            if((empty($this->results) || count($this->results) == 0))
-                $this->searchOnImdb();
+            $this->searchOnLocal();
+            $this->searchOnImdb();
         }
         return $this;
     }
@@ -48,13 +46,13 @@ class ItemsSearchManager
                 ->orWhereRaw("REPLACE(item_original_title, '-', '') LIKE '%{$this->searchTerm}%'");
             })->where('updated_at', '>=', Carbon::now()->subDay());
         if(isset($this->itemType))
-            $query->where('item_category', $this->itemType);
+            $query->where('item_type', $this->itemType);
 
         $results = [];
         if($query->count() > 0){
             foreach ($query->get() as $item){
-                ItemsManager::putImdbDataToLocalStorage($item->getImdbData());
-                $results[] = $item;
+                //ItemsManager::putImdbDataToLocalStorage($item->getImdbData());
+                $results[$item->item_md5] = $item;
             }
         }
         $this->results = array_merge($this->results, $results);
@@ -67,7 +65,7 @@ class ItemsSearchManager
         $response = $api->search($this->searchTerm, $this->itemType);
         $results = [];
         foreach($response as $result){
-            $results[] = ItemsManager::imdbDataToDatabase($result);
+            $results[md5($result['id'])] = ItemsManager::imdbDataToDatabase($result);
         }
         $this->results = array_merge($this->results, $results);
         return $this;

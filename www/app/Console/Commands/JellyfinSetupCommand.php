@@ -74,6 +74,8 @@ class JellyfinSetupCommand extends Command
         $api->createVirtualFolderIfNotExist("Movies", "movies");
         $api->createVirtualFolderIfNotExist("TV Series", "tvshows");
 
+        $api->startLibraryScan();
+
         sleep(20);
         $this->info("end. (".number_format(microtime(true) - $start, 2)."s)\n");
 

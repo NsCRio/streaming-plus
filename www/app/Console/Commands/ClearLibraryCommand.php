@@ -61,7 +61,8 @@ class ClearLibraryCommand extends Command
             mkdir($tvSeriesPath, 0777, true);
 
         $api = new JellyfinApiManager();
-        $api->startLibraryScan();
+        $api->removeVirtualFolder("Movies");
+        $api->removeVirtualFolder("TV Series");
 
         Artisan::call(JellyfinSetupCommand::class);
 

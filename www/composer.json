@@ -16,6 +16,7 @@
         "guzzlehttp/guzzle": "^7.9",
         "laravel/lumen-framework": "^9.0",
         "php-webdriver/webdriver": "^1.1",
+        "symfony/css-selector": "^7.2",
         "symfony/dom-crawler": "^7.2"
     },
     "require-dev": {
@@ -41,12 +42,19 @@
     "scripts": {
         "post-root-package-install": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "post-install-cmd": [
+            "PhantomInstaller\\Installer::installPhantomJS"
+        ],
+        "post-update-cmd": [
+            "PhantomInstaller\\Installer::installPhantomJS"
         ]
     },
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
-        "sort-packages": true
+        "sort-packages": true,
+        "bin-dir": "bin"
     },
     "minimum-stability": "dev",
     "prefer-stable": true
