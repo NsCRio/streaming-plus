@@ -22,8 +22,9 @@ if (!function_exists('sp_data_path')) {
 if (!function_exists('sp_url')) {
     function sp_url($path = "", array $query = []){
         $url = config('app.url');
-        $path = !str_starts_with('/', $path) ? '/' . $path : $path;
-        return $url . $path . '?' . http_build_query($query, '', '&');
+        $path = !str_starts_with($path, '/') ? '/' . $path : $path;
+        $path .= !empty($query) ? '?' . http_build_query($query, '', '&') : '';
+        return $url . $path;
     }
 }
 
@@ -33,6 +34,22 @@ if (!function_exists('jellyfin_url')) {
         $path = !str_starts_with($path, '/') ? '/' . $path : $path;
         $query = array_merge($query, ['spCall' => true]);
         return $url . $path . '?' . http_build_query($query, '', '&');
+    }
+}
+
+if (!function_exists('get_last_url')) {
+    function get_last_url($url){
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($ch, CURLOPT_HEADER, 0);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_AUTOREFERER, 1);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_exec($ch);
+        return curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
     }
 }
 

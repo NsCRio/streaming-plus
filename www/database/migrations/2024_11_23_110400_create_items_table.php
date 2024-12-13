@@ -27,6 +27,7 @@ return new class extends Migration
             $table->string('item_image_url')->nullable();
             $table->string('item_image_md5')->nullable();
             $table->string('item_path')->nullable();
+            $table->string('item_server_id')->nullable();
             $table->timestamps();
         });
     }

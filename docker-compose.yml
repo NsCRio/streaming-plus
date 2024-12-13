@@ -17,6 +17,7 @@ services:
       - ./data:/data
     ports:
       - "8096:8096"
+      - "8095:8095"
       - "8099:3000"
       #devices:
       #- /dev/dri:/dev/dri

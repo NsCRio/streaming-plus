@@ -3,6 +3,7 @@
 namespace App\Services\Items;
 
 use App\Models\Items;
+use App\Services\Jellyfin\JellyfinApiManager;
 use App\Services\Jellyfin\JellyfinManager;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
@@ -20,6 +21,9 @@ class ItemsManager
         if(!empty($imdbData) && isset($imdbData['id'])){
             $item = Items::query()->where('item_imdb_id', $imdbData['id'])->first();
             if(!isset($item)) {
+                $api = new JellyfinApiManager();
+                $system = $api->getSystemInfo();
+
                 $item = new Items();
                 $item->item_md5 = @md5(@$imdbData['id']);
                 $item->item_imdb_id = @$imdbData['id'];
@@ -29,9 +33,9 @@ class ItemsManager
                 $item->item_year = @$imdbData['year'];
                 $item->item_image_url = @$imdbData['poster'];
                 $item->item_image_md5 = @md5(@$imdbData['poster']);
+                $item->item_server_id = @$system['Id'];
+                $item->save();
             }
-            //$item->item_path = self::putImdbDataToLocalStorage($imdbData);
-            $item->save();
             return $item;
         }
         return null;

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Items;
+use App\Models\Streams;
 use App\Models\Users;
 use App\Services\Addons\AddonsApiManager;
 use App\Services\Jellyfin\JellyfinApiManager;
@@ -14,21 +15,31 @@ use Illuminate\Support\Facades\Cache;
 class JellyfinController extends Controller
 {
 
+    public function getStream(string $itemId, string $streamType, Request $request){
+        $response = [];
+        if($request->has('mediaSourceId')){
+            $mediaSourceId = $request->get('mediaSourceId');
+            $stream = Streams::query()->where('stream_md5', $mediaSourceId)
+                ->orWhere('stream_jellyfin_id', $mediaSourceId)
+                ->orWhere('stream_jellyfin_id', $itemId)->first();
+            if(isset($stream)) {
+                return response(file_get_contents($stream->stream_url), 200);
+                //$headers = get_headers($stream->stream_url);
+                //return redirect($stream->stream_url, 308, $headers);
+            }
+        }
+        return response($response, 200);
+    }
+
     /*
      * Items Routes
      */
 
     public function getItems(Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
-        $query = $request->all();
         $searchTerm = trim(strtolower($request->get('searchTerm')));
         $itemType = trim($request->get('includeItemTypes'));
-        $isMissing = $request->get('isMissing', false);
 
-        $api = new JellyfinApiManager();
-        $response = $api->getItems($query);
-
-        if(in_array($itemType, ["Movie", "Series"]) && !$isMissing)
-            $response = JellyfinManager::getItemsFromSearchTerm($searchTerm, $itemType, $response);
+        $response = JellyfinManager::getItemsFromSearchTerm($searchTerm, $itemType, null, $request->query());
 
         return response($response)->header('Content-Type', 'application/json');
     }
@@ -63,15 +74,7 @@ class JellyfinController extends Controller
     }
 
     public function getItemsPlaybackInfo(string $itemId, Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
-        $item = Items::where('item_md5', $itemId)->first();
-        if(isset($item)){
-            return response([
-                'MediaSources' => [],
-                'PlaySessionId' => md5('test'),
-            ])->header('Content-Type', 'application/json');
-        }
-        $api = new JellyfinApiManager();
-        $response = $api->getItemPlaybackInfo($itemId);
+        $response = JellyfinManager::getStreamsByItemId($itemId, $request->post('MediaSourceId'));
         return response($response)->header('Content-Type', 'application/json');
     }
 
@@ -106,6 +109,20 @@ class JellyfinController extends Controller
     /*
      * User Routes
      */
+    public function getUsersItems(string $userId, Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+        $searchTerm = trim(strtolower($request->get('searchTerm')));
+        if($request->has('SearchTerm'))
+            $searchTerm = trim(strtolower($request->get('SearchTerm')));
+        if($request->has('NameStartsWith'))
+            $searchTerm = trim(strtolower($request->get('NameStartsWith')));
+
+        $itemType = trim($request->get('includeItemTypes'));
+
+        $response = JellyfinManager::getItemsFromSearchTerm($searchTerm, $itemType, $userId, $request->query());
+
+        return response($response)->header('Content-Type', 'application/json');
+    }
+
     public function getUsersItem(string $userId, string $itemId, Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
         $query = array_merge($request->query(), ['userId' => $userId]);
         $response = JellyfinManager::getItemById($itemId, $query);
@@ -113,15 +130,7 @@ class JellyfinController extends Controller
     }
 
     public function getUsersItemPlaybackInfo(string $userId, string $itemId, Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\Redirector|\Laravel\Lumen\Http\ResponseFactory|\Illuminate\Http\RedirectResponse {
-        //TODO: retrieve play urls
-        $item = JellyfinManager::getItemById($itemId);
-        if(isset($item)){
-            return response([
-                'MediaSources' => [],
-                'PlaySessionId' => md5('test'),
-            ])->header('Content-Type', 'application/json');
-        }
-        return redirect(jellyfin_url($request->path(), $request->query()));
+        return $this->getItemsPlaybackInfo($itemId, $request);
     }
 
     public function postUsersItemFavorite(string $userId, string $itemId, Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {

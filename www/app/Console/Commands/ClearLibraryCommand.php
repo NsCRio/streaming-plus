@@ -51,17 +51,17 @@ class ClearLibraryCommand extends Command
 
         system("rm -rf ".escapeshellarg(sp_data_path('library')), $result);
 
-        $api = new JellyfinApiManager();
+        //$api = new JellyfinApiManager();
 
         foreach (config('jellyfin.virtualFolders') as $virtualFolder){
             if(!file_exists($virtualFolder['path']))
                 mkdir($virtualFolder['path'], 0777, true);
 
             system("chown -R ".env('USER_NAME').":".env('USER_NAME')." ".$virtualFolder['path']);
-            $api->deleteVirtualFolder($virtualFolder['name']);
+            //$api->deleteVirtualFolder($virtualFolder['name']);
         }
 
-        Artisan::call(JellyfinSetupCommand::class);
+        //Artisan::call(JellyfinSetupCommand::class);
 
         $this->info("end. (".number_format(microtime(true) - $start, 2)."s)\n");
 

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\IMDB\IMDBApiManager;
 use App\Services\Items\ItemsManager;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
@@ -50,4 +51,84 @@ class Items extends Model
         return false;
     }
 
+    public function getJellyfinDetailItem($withImdbData = true){
+        if($withImdbData)
+            $imdbData = $this->getImdbData();
+
+        $overview = "<span style='color: #8e2f96'><b>Click on the Heart icon to add this item to the library.</b></span>";
+
+        $outcome = \App\Services\Jellyfin\lib\Items::$CONFIG;
+        $outcome['CommunityRating'] = @$imdbData['rating'];
+        $outcome['DateCreated'] = Carbon::parse($this->created_at)->timestamp;
+        $outcome['ProductionYear'] = $this->item_year;
+        $outcome['PremiereDate'] = $this->item_year."-01-01T00:00:00.0000000Z";
+        $outcome['ExternalUrls'][] = [
+            'Name' => 'IMDb',
+            'Url' => 'https://www.imdb.com/title/' . $this->item_imdb_id,
+        ];
+        $outcome['Genres'] = @$imdbData['genre'];
+        $outcome['Id'] = $this->item_md5;
+        $outcome['ImageTags']['Primary'] = $this->item_image_md5;
+        $outcome['Name'] = $this->item_title;
+        $outcome['OriginalTitle'] = $this->item_original_title;
+        $outcome['Overview'] = $overview . "\n\n" . @$imdbData['plot'];
+        $outcome['ParentId'] = $this->item_md5;
+        $outcome['ProviderIds']['Imdb'] = $this->item_imdb_id;
+        $outcome['ServerId'] = $this->item_server_id;
+        $outcome['SortName'] = $this->item_title;
+        //$outcome['Type'] = $this->item_type == "tvSeries" ? 'Series' : 'Movie';
+        $outcome['Type'] = "Video";
+        $outcome['Path'] = null;
+        $outcome['MediaStreams'] = null;
+        $outcome['MediaSources'] = [];
+        $outcome['VideoType'] = 'Unknown';
+        $outcome['MediaType'] = 'Unknown';
+        $outcome['LocationType'] = 'Remote';
+        $outcome['UserData'] = [
+            'PlaybackPositionTicks' => 0,
+            'PlayCount' => 0,
+            'IsFavorite' => isset($item->item_path),
+            'Played' => false,
+            'Key' => null,
+            'ItemId' => '00000000000000000000000000000000'
+        ];
+        return $outcome;
+    }
+
+    public function getJellyfinListItem($type = "CollectionFolder"){
+        $outcome = \App\Services\Jellyfin\lib\Items::$CONFIG;
+        return array_merge($outcome, [
+            'Name' => $this->item_title,
+            'ServerId' => $this->item_server_id,
+            'Id' => $this->item_jellyfin_id ?? $this->item_md5,
+            'PremiereDate' => $this->item_year."-01-01T00:00:00.0000000Z",
+            'CriticRating' => null,
+            'OfficialRating' => null,
+            'ChannelId' => null,
+            'CommunityRating' => null,
+            'ProductionYear' => $this->item_year,
+            'IsFolder' => false,
+            'Type' => $type,
+            //'Type' => 'Unknown',
+            //'Type' => $this->item_type == "tvSeries" ? 'Series' : 'Movie',
+            'PrimaryImageAspectRatio' => 0.7,
+            'UserData' => [
+                'PlaybackPositionTicks' => 0,
+                'PlayCount' => 0,
+                'IsFavorite' => isset($this->item_path),
+                'Played' => false,
+                'Key' => null,
+                'ItemId' => '00000000000000000000000000000000'
+            ],
+            'VideoType' => 'Unknown',
+            //'VideoType' => 'VideoFile',
+            'ImageTags' => [
+                "Primary" => $this->item_image_md5,
+            ],
+            //'LocationType' => 'FileSystem',
+            'LocationType' => 'Remote',
+            'MediaType' => 'Unknown',
+            //'MediaType' => 'Video',
+        ]);
+    }
 }

@@ -42,10 +42,13 @@ $router->get('/Items/{itemId}/Similar',                         ['as'=> 'jellyfi
 $router->post('/Items/{itemId}/PlaybackInfo',                   ['as'=> 'jellyfin.items.playback_info', 'uses'=>'JellyfinController@getItemsPlaybackInfo']);
 $router->get('/Items/{itemId}/Images/{imageId}',                ['as'=> 'jellyfin.items.images', 'uses'=>'JellyfinController@getItemsImages']);
 
-$router->get('/Users/{userId}/Items/{itemId}',                  ['as'=> 'jellyfin.users.items', 'uses'=>'JellyfinController@getUsersItem']);
-$router->get('/Users/{userId}/Items/{itemId}/PlaybackInfo',     ['as'=> 'jellyfin.users.items.playback_info', 'uses'=>'JellyfinController@getUsersItemPlaybackInfo']);
-$router->post('/Users/{userId}/FavoriteItems/{itemId}',         ['as'=> 'jellyfin.users.items.favorite', 'uses'=>'JellyfinController@postUsersItemFavorite']);
-$router->delete('/Users/{userId}/FavoriteItems/{itemId}',       ['as'=> 'jellyfin.users.items.favorite.delete', 'uses'=>'JellyfinController@deleteUsersItemFavorite']);
+$router->get('/Users/{userId}/Items',                           ['as'=> 'jellyfin.users.items', 'uses'=>'JellyfinController@getUsersItems']);
+$router->get('/Users/{userId}/Items/{itemId}',                  ['as'=> 'jellyfin.users.item', 'uses'=>'JellyfinController@getUsersItem']);
+$router->get('/Users/{userId}/Items/{itemId}/PlaybackInfo',     ['as'=> 'jellyfin.users.item.playback_info', 'uses'=>'JellyfinController@getUsersItemPlaybackInfo']);
+$router->post('/Users/{userId}/FavoriteItems/{itemId}',         ['as'=> 'jellyfin.users.item.favorite', 'uses'=>'JellyfinController@postUsersItemFavorite']);
+$router->delete('/Users/{userId}/FavoriteItems/{itemId}',       ['as'=> 'jellyfin.users.item.favorite.delete', 'uses'=>'JellyfinController@deleteUsersItemFavorite']);
+
+$router->get('/Videos/{itemId}/{streamType}',                   ['as'=> 'jellyfin.stream', 'uses'=>'JellyfinController@getStream']);
 
 $router->get('/Persons',                                        ['as'=> 'jellyfin.persons', 'uses'=>'JellyfinController@getPersons']);
 $router->get('/Artists',                                        ['as'=> 'jellyfin.artists', 'uses'=>'JellyfinController@getArtists']);

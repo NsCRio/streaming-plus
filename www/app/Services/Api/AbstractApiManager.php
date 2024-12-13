@@ -8,9 +8,9 @@ class AbstractApiManager
 {
     protected $endpoint, $default_headers = [];
 
-    public static function call(string $uri, string $method = 'GET', array $data = [], array $headers = []) : array|null {
+    public static function call(string $uri, string $method = 'GET', array $data = [], array $headers = [], $returnBody = false) : string|array|null {
         $api = new self();
-        return $api->apiCall($uri, $method, $data, $headers);
+        return $api->apiCall($uri, $method, $data, $headers, $returnBody);
     }
 
     protected function apiCall(string $uri, string $method = 'GET', array $data = [], array $headers = [], $returnBody = false) : string|array|null {

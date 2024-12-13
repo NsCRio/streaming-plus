@@ -7,7 +7,9 @@ use App\Services\Api\AbstractApiManager;
 use App\Services\Jellyfin\lib\Movies;
 use App\Services\Jellyfin\lib\TVSeries;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 
 class JellyfinApiManager extends AbstractApiManager
@@ -20,6 +22,38 @@ class JellyfinApiManager extends AbstractApiManager
 
         if(!empty($headers))
             $this->headers = $headers;
+    }
+
+    public function getApiKeys(){
+        return $this->apiCall('/Auth/Keys', 'GET');
+    }
+
+    public function createApiKey(string $apiKeyName){
+        $query = ['app' => $apiKeyName];
+        return $this->apiCall('/Auth/Keys?'.http_build_query($query), 'POST');
+    }
+
+    public function createApiKeyIfNotExists(string $apiKeyName){
+        $keys = $this->getApiKeys();
+        if(!empty($keys['Items'])){
+            $keys = array_filter(array_map(function($key) use($apiKeyName){
+                return $key['AppName'] == $apiKeyName ? $key : null;
+            }, $keys['Items']));
+            if(!empty($keys))
+                return $keys[array_key_first($keys)];
+        }
+        $this->createApiKey($apiKeyName);
+        $keys = $this->getApiKeys();
+        return collect($keys)->where('AppName', $apiKeyName)->first();
+    }
+
+    public function getItemFromQuery(string $itemId, array $query = []): ?array {
+        if (isset($query['userId'])) {
+            $response = $this->getUsersItem($query['userId'], $itemId, $query);
+        } else {
+            $response = $this->getItem($itemId, $query);
+        }
+        return $response;
     }
 
     public function getItems(array $query = []){
@@ -57,9 +91,14 @@ class JellyfinApiManager extends AbstractApiManager
         return $this->apiCall('/Items/'.$itemId.'/Similar', 'GET', $query);
     }
 
-    public function getUsersItems(string $userId, string $itemId, array $query = []){
+    public function getUsersItem(string $userId, string $itemId, array $query = []){
         $query = array_merge($query, ['spCall' => true]);
         return $this->apiCall('/Users/'.$userId.'/Items/'.$itemId, 'GET', $query);
+    }
+
+    public function getUsersItems(string $userId, array $query = []){
+        $query = array_merge($query, ['spCall' => true]);
+        return $this->apiCall('/Users/'.$userId.'/Items', 'GET', $query);
     }
 
     public function setItemFavorite(string $itemId, string $userId){
@@ -70,6 +109,16 @@ class JellyfinApiManager extends AbstractApiManager
     public function removeItemFavorite(string $itemId, string $userId){
         $query = ['userId' => $userId, 'spCall' => true];
         return $this->apiCall('/UserFavoriteItems/'.$itemId.'?'.http_build_query($query), 'DELETE', []);
+    }
+
+    public function setSessionsPlaying(array $query = []){
+        $query = array_merge($query, ['spCall' => true]);
+        return $this->apiCall('/Sessions/Playing', 'POST_BODY', $query);
+    }
+
+    public function setSessionsPlayingProgress(array $query = []){
+        $query = array_merge($query, ['spCall' => true]);
+        return $this->apiCall('/Sessions/Playing/Progress', 'POST_BODY', $query);
     }
 
     public function getPersons(array $query = []){
@@ -232,6 +281,15 @@ class JellyfinApiManager extends AbstractApiManager
         return $this->apiCall('/Users/'.$userId.'/Policy', 'POST_JSON', $data);
     }
 
+    public static function selfCall(Request $request, array $data = [], $returnBody = false){
+        $uri = $request->path();
+        $uri = !str_starts_with('/', $uri) ? '/' . $uri : $uri;
+        $url = config('jellyfin.url').$uri.'?'.http_build_query($request->query());
+        $data = !empty($data) ? $data : $request->post();
+        $response = static::call($url, $request->getMethod(), $data, $request->header(), $returnBody);
+        return $response ?? [];
+    }
+
     protected function apiCall(string $uri, string $method = 'GET', array $data = [], array $headers = [], $returnBody = false) : array|null {
         $default_headers = [
             'Content-Type' => 'application/json'
@@ -241,6 +299,10 @@ class JellyfinApiManager extends AbstractApiManager
             $default_headers = $this->headers;
 
         $headers = array_merge($default_headers, $headers);
+        if(Cache::has('jellyfin-api-key') && !isset($headers['authorization']) && !isset($headers['x-emby-token'])
+            && !isset($headers['Authorization']) && !isset($headers['X-Emby-Token']))
+            $headers['x-emby-token'] = Cache::get('jellyfin-api-key');
+
         return parent::apiCall($uri, $method, $data, $headers);
     }
 
