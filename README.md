@@ -1,5 +1,6 @@
-# streaming-plus
+# streaming-plus [DEMO]
 Open Source Streaming Media Center
+
 Jellyfin Media Center + Streamio Addons
 
 
