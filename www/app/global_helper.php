@@ -19,6 +19,19 @@ if (!function_exists('sp_data_path')) {
     }
 }
 
+if (!function_exists('app_url')) {
+    function app_url($path = "", array $query = []){
+        $url = "http://".env('JELLYFIN_URL');
+        if(!isset($url))
+            $url = config('app.url');
+        if(!empty($path)) {
+            $path = !str_starts_with($path, '/') ? '/' . $path : $path;
+            $path .= !empty($query) ? '?' . http_build_query($query, '', '&') : '';
+        }
+        return $url . $path;
+    }
+}
+
 if (!function_exists('sp_url')) {
     function sp_url($path = "", array $query = []){
         $url = config('app.url');

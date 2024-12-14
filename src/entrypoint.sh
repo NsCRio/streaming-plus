@@ -32,6 +32,7 @@ cp /var/src/default.conf /etc/nginx/conf.d/
 
 #Creo le directory che mi servono
 mkdir -p $SP_DATA_PATH/app
+mkdir -p $SP_DATA_PATH/app/sessions
 mkdir -p $SP_DATA_PATH/jellyfin
 mkdir -p $SP_DATA_PATH/jellyfin/cache
 mkdir -p $SP_DATA_PATH/jellyfin/config

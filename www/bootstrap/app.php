@@ -47,6 +47,14 @@ $app->singleton(
     App\Console\Kernel::class
 );
 
+$app->singleton(Illuminate\Session\SessionManager::class, function () use ($app) {
+    return $app->loadComponent('session', Illuminate\Session\SessionServiceProvider::class, 'session');
+});
+
+$app->singleton('session.store', function () use ($app) {
+    return $app->loadComponent('session', Illuminate\Session\SessionServiceProvider::class, 'session.store');
+});
+
 /*
 |--------------------------------------------------------------------------
 | Register Config Files
@@ -63,6 +71,7 @@ $app->configure('database');
 $app->configure('cache');
 $app->configure('jellyfin');
 $app->configure('imdb');
+$app->configure('torrent');
 
 /*
 |--------------------------------------------------------------------------
@@ -76,6 +85,7 @@ $app->configure('imdb');
 */
 
 $app->middleware([
+    \Illuminate\Session\Middleware\StartSession::class,
     App\Http\Middleware\CorsMiddleware::class,
     App\Http\Middleware\JellyfinMiddleware::class
 ]);

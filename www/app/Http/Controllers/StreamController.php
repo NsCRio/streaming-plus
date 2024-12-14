@@ -8,6 +8,7 @@ use App\Services\Addons\AddonsApiManager;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Session;
 use Laravel\Lumen\Routing\Controller as BaseController;
 
 class StreamController extends BaseController
@@ -17,10 +18,7 @@ class StreamController extends BaseController
             if ($request->has('streamId')) {
                 $stream = Streams::query()->where('stream_md5', $request->get('streamId'))
                     ->orWhere('stream_jellyfin_id', $request->get('streamId'))->first();
-                if (isset($stream)) {
-                    $headers = get_headers($stream->stream_url);
-                    return redirect($stream->stream_url, 308, $headers);
-                }
+                $stream = $stream?->toArray();
             }
             if ($request->has('imdbId')) {
                 $api = new AddonsApiManager();
@@ -31,12 +29,26 @@ class StreamController extends BaseController
                     $imdbId .= ':' . $request->get('episode');
 
                 $streams = $api->searchStreamByImdbId($imdbId);
-                if (!empty($streams)) {
+                if (!empty($streams))
+                    $streams = array_filter(array_map(function ($stream) {
+                        return $stream['stream_protocol'] == "http" ? $stream : null;
+                    }, $streams));
                     $stream = $streams[array_rand($streams)];
-                    $headers = get_headers($stream['stream_url']);
-                    return redirect($stream['stream_url'], 308, $headers);
+            }
+
+            if (isset($stream)) {
+                Session::put('stream', $stream);
+                if(!str_starts_with($stream['stream_url'], 'http')) {
+                    return redirect(app_url('/stream-torrent/'.$stream['stream_url']), 301);
+                }else {
+                    $file = pathinfo($stream['stream_url']);
+                    if (in_array($file['extension'], ['m3u', 'm3u8'])) {
+                        return response(file_get_contents($stream['stream_url']), 200);
+                    }
+                    return redirect($stream['stream_url'], 301);
                 }
             }
+
             return response('', 404);
         //});
     }

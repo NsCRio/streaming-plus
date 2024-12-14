@@ -11,21 +11,23 @@ use App\Services\Jellyfin\JellyfinManager;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Session;
 
 class JellyfinController extends Controller
 {
 
     public function getStream(string $itemId, string $streamType, Request $request){
         $response = [];
-        if($request->has('mediaSourceId')){
-            $mediaSourceId = $request->get('mediaSourceId');
-            $stream = Streams::query()->where('stream_md5', $mediaSourceId)
-                ->orWhere('stream_jellyfin_id', $mediaSourceId)
-                ->orWhere('stream_jellyfin_id', $itemId)->first();
-            if(isset($stream)) {
-                return response(file_get_contents($stream->stream_url), 200);
-                //$headers = get_headers($stream->stream_url);
-                //return redirect($stream->stream_url, 308, $headers);
+        $stream = Session::get('stream');
+        if(isset($stream)){
+            if(!str_starts_with($stream['stream_url'], 'http')) {
+                return redirect(app_url('/stream-torrent/'.$stream['stream_url']), 301);
+            }else {
+                $file = pathinfo($stream['stream_url']);
+                if (in_array($file['extension'], ['m3u', 'm3u8'])) {
+                    return response(file_get_contents($stream['stream_url']), 200);
+                }
+                return redirect($stream['stream_url'], 301);
             }
         }
         return response($response, 200);

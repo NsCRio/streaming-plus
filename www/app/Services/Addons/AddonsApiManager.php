@@ -50,10 +50,13 @@ class AddonsApiManager extends AbstractApiManager
                     $streams = array_merge($streams, $this->searchStreamByImdbId($imdbId, $itemId));
 
                 foreach ($streams as $stream) {
-                    $mediaSource = $detail['MediaSources'][array_key_first($detail['MediaSources'])];
-                    $mediaSource['Container'] = $mediaSource['Container'] !== "strm" ? $mediaSource['Container'] : 'hls';
+                    $mediaSource = MediaSource::$CONFIG;
+                    if(!empty($detail['MediaSources']))
+                        $mediaSource = $detail['MediaSources'][array_key_first($detail['MediaSources'])];
+                    $mediaSource['Container'] = $stream['stream_container'];
                     $mediaSource['Id'] = $stream['stream_md5'];
-                    $mediaSource['Path'] = $stream['stream_url'];
+                    //$mediaSource['Path'] = $stream['stream_url'];
+                    $mediaSource['Path'] = app_url('/stream?streamId=').$stream['stream_md5'];
                     $mediaSource['Name'] = $stream['stream_title'];
                     $mediaSources[$stream['stream_md5']] = $mediaSource;
                 }
@@ -71,55 +74,80 @@ class AddonsApiManager extends AbstractApiManager
                         $mediaSources[$key]['Container'] = "hls";
                     }
                     if (str_starts_with($mediaSource['Path'], config('app.url'))) {
-                        $mediaSources[$key]['Name'] = "Auto";
-                        $mediaSources[$key]['Path'] = get_last_url($mediaSource['Path']);
+                        $mediaSources[$key]['Name'] = "Random";
+                        $mediaSources[$key]['Path'] = str_replace(config('app.url'), app_url(), $mediaSource['Path']);
+                        if(count($mediaSources) > 1)
+                            unset($mediaSources[$key]);
                     }
                 }
             }
+
+            $mediaSources = collect($mediaSources)->sortBy('Container')->toArray();
 
             return array_values($mediaSources);
         //});
     }
 
     public function searchStreamByImdbId(string $imdbId, string $itemId = null){
-        return Cache::remember('stream_imdb_'.md5($imdbId.$itemId), Carbon::now()->addMinutes(10), function() use ($imdbId, $itemId) {
+        //return Cache::remember('stream_imdb_'.md5($imdbId.$itemId), Carbon::now()->addMinutes(10), function() use ($imdbId, $itemId) {
             $streams = [];
-            $sources = [];
             $addons = self::getAddons();
             foreach ($addons as $addon) {
                 $this->endpoint = $addon['repository']['endpoint'];
                 if (str_contains($imdbId, ':')) {
-                    $sources = array_merge($sources, $this->getSeriesEpisode($imdbId) ?? []);
+                    $sources = $this->getSeriesEpisode($imdbId) ?? [];
                 } else {
-                    $sources = array_merge($sources, $this->getMovie($imdbId) ?? []);
+                    $sources = $this->getMovie($imdbId) ?? [];
                 }
                 if (!empty($sources)) {
                     foreach ($sources as $source) {
-                        if (isset($source['infoHash'])) //Per il momento skippo i torrent
-                            continue;
 
-                        $stream = Streams::query()
-                            ->where('stream_md5', md5(json_encode($source)))
-                            ->first();
-                        if (!isset($stream))
-                            $stream = new Streams();
-                        $stream->stream_md5 = md5(json_encode($source));
-                        $stream->stream_url = $source['url'];
-                        $stream->stream_protocol = "http";
-                        $stream->stream_container = "hls";
-                        $stream->stream_addon_id = $addon['repository']['id'];
-                        if (isset($itemId))
-                            $stream->stream_jellyfin_id = $itemId;
-                        $stream->stream_imdb_id = $imdbId;
-                        $stream->stream_title = @$source['name'] . " - " . @$source['title'];
-                        $stream->stream_host = $addon['repository']['host'];
-                        $stream->save();
-                        $streams[md5(json_encode($source))] = $stream->toArray();
+                        if (isset($source['infoHash']) && isset($source['behaviorHints'])) {
+                            if(isset($source['behaviorHints']['filename'])){
+                                $file = pathinfo($source['behaviorHints']['filename']);
+                                if(in_array(@$file['extension'], ['mkv', 'mp4'])){
+                                    $source['url'] = urlencode("magnet:?xt=urn:btih:" . $source['infoHash']);
+                                    $source['url'] .= '?file=' . urlencode($source['behaviorHints']['filename']);
+                                }
+                            }
+                        }
+
+                        if(isset($source['url'])) {
+                            $file = pathinfo($source['url']);
+                            $container = @$file['extension'] ?? "hls";
+                            if(in_array(@$file['extension'], ['m3u', 'm3u8']))
+                                $container = 'hls';
+
+                            $title = @$source['name'];
+                            if(!empty(@$source['title']))
+                                $title .= " - " . @$source['title'];
+                            if(!empty(@$source['description']))
+                                $title .= " - " . @$source['description'];
+
+                            $stream = Streams::query()
+                                ->where('stream_md5', md5(json_encode($source)))
+                                ->first();
+                            if (!isset($stream))
+                                $stream = new Streams();
+                            $stream->stream_md5 = md5($source['url']);
+                            $stream->stream_url = $source['url'];
+                            $stream->stream_protocol = isset($source['infoHash']) ? "torrent" : "http";
+                            $stream->stream_container = $container;
+                            $stream->stream_addon_id = $addon['repository']['id'];
+                            if (isset($itemId))
+                                $stream->stream_jellyfin_id = $itemId;
+                            $stream->stream_imdb_id = $imdbId;
+                            $stream->stream_title = $title;
+                            $stream->stream_host = $addon['repository']['host'];
+                            $stream->save();
+                            $streams[md5(json_encode($source))] = $stream->toArray();
+                        }
                     }
                 }
             }
+
             return array_values($streams);
-        });
+        //});
     }
 
     public static function getAddonsFromPlugins(){

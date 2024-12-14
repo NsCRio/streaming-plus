@@ -96,10 +96,10 @@ class JellyfinManager
 
         $api = new AddonsApiManager();
         $response['MediaSources'] = $api->searchStreamByItemId($itemId, $mediaSourceId);
-        if(!empty($response['MediaSources'])) {
-            $response['MediaSources'][0]['Id'] = $itemId;
-            //$response['MediaSources'][0]['Path'] = get_last_url(sp_url('/stream?streamId='.$mediaSourceId));
-        }
+//        if(!empty($response['MediaSources'])) {
+//            $response['MediaSources'][0]['Id'] = $itemId;
+//            $response['MediaSources'][0]['Path'] = get_last_url(sp_url('/stream?streamId='.$mediaSourceId));
+//        }
 
         return $response ?? [];
     }

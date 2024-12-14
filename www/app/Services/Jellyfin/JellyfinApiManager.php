@@ -299,9 +299,9 @@ class JellyfinApiManager extends AbstractApiManager
             $default_headers = $this->headers;
 
         $headers = array_merge($default_headers, $headers);
-        if(Cache::has('jellyfin-api-key') && !isset($headers['authorization']) && !isset($headers['x-emby-token'])
+        if(Session::get('jellyfin-api-key', false) && !isset($headers['authorization']) && !isset($headers['x-emby-token'])
             && !isset($headers['Authorization']) && !isset($headers['X-Emby-Token']))
-            $headers['x-emby-token'] = Cache::get('jellyfin-api-key');
+            $headers['x-emby-token'] = Session::get('jellyfin-api-key');
 
         return parent::apiCall($uri, $method, $data, $headers);
     }
