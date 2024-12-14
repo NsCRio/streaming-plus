@@ -4,8 +4,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: streamingplus-app
-    hostname: streamingplusapp
+    container_name: streaming_plus
+    hostname: streamingplus
     restart: unless-stopped
     environment:
       - PUID=1000
