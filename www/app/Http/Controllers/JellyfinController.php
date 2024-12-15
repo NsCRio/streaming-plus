@@ -6,6 +6,7 @@ use App\Models\Items;
 use App\Models\Streams;
 use App\Models\Users;
 use App\Services\Addons\AddonsApiManager;
+use App\Services\Items\ItemsManager;
 use App\Services\Jellyfin\JellyfinApiManager;
 use App\Services\Jellyfin\JellyfinManager;
 use Carbon\Carbon;
@@ -18,18 +19,25 @@ class JellyfinController extends Controller
 
     public function getStream(string $itemId, string $streamType, Request $request){
         $response = [];
-        $stream = Session::get('stream');
-        if(isset($stream)){
-            if(!str_starts_with($stream['stream_url'], 'http')) {
-                return redirect(app_url('/stream-torrent/'.$stream['stream_url']), 301);
-            }else {
-                $file = pathinfo($stream['stream_url']);
-                if (in_array($file['extension'], ['m3u', 'm3u8'])) {
-                    return response(file_get_contents($stream['stream_url']), 200);
+
+        if($request->has('mediaSourceId')){
+            $itemData = JellyfinManager::decodeItemId($request->get('mediaSourceId'));
+            if(isset($itemData['streamId'])) {
+                $stream = Streams::query()->where('stream_md5', $itemData['streamId'])->first();
+                if(isset($stream)) {
+                    if($stream->stream_protocol == "torrent") {
+                        return redirect(app_url('/stream-torrent/'.$stream->stream_url), 301);
+                    }else {
+                        $file = pathinfo($stream->stream_url);
+                        if (in_array($file['extension'], ['m3u', 'm3u8'])) {
+                            return response(file_get_contents($stream->stream_url), 200);
+                        }
+                        return redirect($stream->stream_url, 301);
+                    }
                 }
-                return redirect($stream['stream_url'], 301);
             }
         }
+
         return response($response, 200);
     }
 
@@ -66,17 +74,27 @@ class JellyfinController extends Controller
     }
 
     public function getItemsImages(string $itemId, string $imageId, Request $request) {
-        return Cache::remember('item_image_'.md5($itemId.$imageId), Carbon::now()->addDay(), function () use ($request, $itemId, $imageId) {
-            $item = Items::where('item_md5', $itemId)->first();
-            if(isset($item->item_image_url)){
+        $item = Items::where('item_md5', $itemId)->first();
+        if(isset($item->item_image_url)){
+            return Cache::remember('item_image_'.md5($itemId.$imageId), Carbon::now()->addDay(), function () use ($item) {
                 return response(file_get_contents($item->item_image_url), 200)->header('Content-Type', 'image/jpeg');
-            }
-            return response(file_get_contents(jellyfin_url($request->path(), $request->query())), 200)->header('Content-Type', 'image/webp');
-        });
+            });
+        }
+        return response(file_get_contents(jellyfin_url($request->path(), $request->query())), 200)->header('Content-Type', 'image/webp');
     }
 
     public function getItemsPlaybackInfo(string $itemId, Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
-        $response = JellyfinManager::getStreamsByItemId($itemId, $request->post('MediaSourceId'));
+        $mediaSourceId = $request->post('MediaSourceId', null);
+
+        $itemData = ['itemId' => $itemId, 'mediaSourceId' => $mediaSourceId];
+        if(isset($mediaSourceId))
+            $itemData = JellyfinManager::decodeItemId($mediaSourceId);
+
+        $response = JellyfinManager::getStreamsByItemId($itemData['itemId'], @$itemData['mediaSourceId']);
+//        if(!empty($response['MediaSources']))
+//            $response['MediaSources'][array_key_first($response['MediaSources'])]['Id'] = $itemData['itemId'];
+
+        //dd($response);
         return response($response)->header('Content-Type', 'application/json');
     }
 

@@ -6,6 +6,7 @@ use App\Models\Items;
 use App\Models\Streams;
 use App\Services\Addons\AddonsApiManager;
 use App\Services\Items\ItemsSearchManager;
+use App\Services\Streams\StreamsManager;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -14,6 +15,30 @@ use LaLit\Array2XML;
 class JellyfinManager
 {
     public static $typesMap = ['Movie' => 'movie', 'Series' => 'tvSeries'];
+
+
+    public static function decodeItemId(string $itemId){
+        if (strlen($itemId) > 32) { //default is md5
+            $string = base64_decode($itemId);
+            $ids = explode("-", $string);
+            $outcome = [];
+            foreach ($ids as $id) {
+                if (str_starts_with($id, 'strm_'))
+                    $outcome['streamId'] = str_replace('strm_', '', $id);
+                if (str_starts_with($id, 'iid_'))
+                    $outcome['itemId'] = str_replace('iid_', '', $id);
+                if (str_starts_with($id, 'msid_'))
+                    $outcome['mediaSourceId'] = str_replace('msid_', '', $id);
+                if (str_starts_with($id, 'imdbid_'))
+                    $outcome['imdbId'] = str_replace('imdbid_', '', $id);
+            }
+            if(!isset($outcome['mediaSourceId']))
+                $outcome['mediaSourceId'] = @$outcome['streamId'];
+            return $outcome;
+        }
+        return ['itemId' => $itemId];
+    }
+
 
     /**
      * @throws \Exception
@@ -50,57 +75,41 @@ class JellyfinManager
 
 
     public static function getItemById(string $itemId, array $query = null): null|array {
-        return Cache::remember('jellyfin_item_'.md5($itemId.json_encode($query)), Carbon::now()->addSeconds(10), function () use ($itemId, $query) {
-            $outcome = [];
-            $api = new JellyfinApiManager();
+        $outcome = [];
+        $itemData = self::decodeItemId($itemId);
 
-            //Check on Jellyfin
-            if (!empty($query)) {
-                $response = $api->getItemFromQuery($itemId, $query);
-                if(!empty($response)){
-                    $outcome = $response;
-                    $imdbId = @$outcome['ProviderIds']['Imdb'];
-                    if (isset($imdbId)) {
-                        $item = Items::query()->where('item_imdb_id', $imdbId)->first();
-                        if (isset($item)) {
-                            $item->item_jellyfin_id = $itemId;
-                            $item->item_tmdb_id = @$outcome['ProviderIds']['Tmdb'];
-                            $item->save();
-                        }
+        //Is an item from search view that is not yet in the Library
+        $item = Items::where('item_md5', $itemData['itemId'])->first();
+        if(isset($item))
+            return $item->getJellyfinDetailItem();
+
+        //Search from Jellyfin items on Library
+        if (!empty($query)) {
+            $api = new JellyfinApiManager();
+            $outcome = $api->getItemFromQuery($itemData['itemId'], $query);
+            if(!empty($outcome)){
+                //Adds Streams url to Item
+                $outcome['MediaSources'] = StreamsManager::searchStreamsByItemId($itemData['itemId'], @$itemData['streamId'], @$itemData['imdbId']);
+                //Save some useful information for DB
+                $imdbId = @$outcome['ProviderIds']['Imdb'];
+                if (isset($imdbId)) {
+                    $item = Items::query()->where('item_imdb_id', $imdbId)->first();
+                    if (isset($item)) {
+                        $item->item_jellyfin_id = $itemData['itemId'];
+                        $item->item_tmdb_id = @$outcome['ProviderIds']['Tmdb'];
+                        $item->save();
                     }
                 }
             }
-
-            //Check on Items
-            if (empty($outcome)) {
-                $item = Items::where('item_md5', $itemId)->first();
-                if(isset($item))
-                    $outcome = $item->getJellyfinDetailItem();
-            }
-
-            //Adds Streams Url
-            if(!empty($outcome)) {
-                $api = new AddonsApiManager();
-                $mediaSources = $api->searchStreamByItemId($itemId);
-                $outcome['MediaSources'] = $mediaSources;
-            }
-
-            return $outcome;
-        });
+        }
+        return $outcome;
     }
 
 
     public static function getStreamsByItemId(string $itemId, string $mediaSourceId = null): array {
         $api = new JellyfinApiManager();
         $response = $api->getItemPlaybackInfo($itemId);
-
-        $api = new AddonsApiManager();
-        $response['MediaSources'] = $api->searchStreamByItemId($itemId, $mediaSourceId);
-//        if(!empty($response['MediaSources'])) {
-//            $response['MediaSources'][0]['Id'] = $itemId;
-//            $response['MediaSources'][0]['Path'] = get_last_url(sp_url('/stream?streamId='.$mediaSourceId));
-//        }
-
+        $response['MediaSources'] = StreamsManager::searchStreamsByItemId($itemId, $mediaSourceId);
         return $response ?? [];
     }
 
@@ -112,7 +121,7 @@ class JellyfinManager
         if(!empty($imdbData['seasons'])){
             self::createSeasonsStructure($directory, $imdbData);
         }else{
-            self::createStrmFile("", $directory, $imdbData);
+            self::createStrmFile($directory, $imdbData);
         }
     }
 
@@ -129,7 +138,7 @@ class JellyfinManager
 
             foreach($episodes as $episode){
                 self::createNfoFile($seasonPath, $episode);
-                self::createStrmFile("", $seasonPath, $episode);
+                self::createStrmFile($seasonPath, $episode);
             }
         }
     }
@@ -186,8 +195,9 @@ class JellyfinManager
     /**
      * @throws \Exception
      */
-    public static function createStrmFile(string $streamName = "", string $directory, array $imdbData): ?string {
+    public static function createStrmFile(string $directory, array $imdbData): ?string {
         try {
+            $streamName = "";
             $filePath = $directory . "/" . @$imdbData['imdb_id'];
             $filePath .= (!empty($streamName) ? '-' . $streamName : "") . ".strm";
             $streamUrl = config('app.url').'/stream?';
