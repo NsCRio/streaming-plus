@@ -5,6 +5,7 @@ namespace App\Services\Streams;
 use App\Models\Streams;
 use App\Services\Addons\AddonsApiManager;
 use App\Services\Jellyfin\JellyfinApiManager;
+use App\Services\Jellyfin\JellyfinManager;
 use App\Services\Jellyfin\lib\MediaSource;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -47,14 +48,12 @@ class StreamsManager
                         $mediaSource['MediaSourceId'] = $stream['stream_md5'];
                         $mediaSource['ItemId'] = $itemId;
                         $mediaSource['ImdbId'] = $imdbId;
-                        $mediaSource['Id'] = 'strm_' . $stream['stream_md5'];
-                        if (isset($itemId))
-                            $mediaSource['Id'] .= '-iid_' . $itemId;
-                        if (isset($mediaSourceId))
-                            $mediaSource['Id'] .= '-msid_' . $mediaSourceId;
-                        if (isset($imdbId))
-                            $mediaSource['Id'] .= '-imdbid_' . $imdbId;
-                        $mediaSource['Id'] = base64_encode($mediaSource['Id']);
+                        $mediaSource['Id'] = JellyfinManager::encodeItemId([
+                            'itemId' => $itemId,
+                            'streamId' => $stream['stream_md5'],
+                            'mediaSourceId' => $mediaSourceId,
+                            'imdbId' => $imdbId,
+                        ]);
                         $mediaSource['Path'] = app_url('/stream?streamId=') . $stream['stream_md5'];
                         $mediaSource['Name'] = $stream['stream_title'];
                         $mediaSources[$stream['stream_md5']] = $mediaSource;

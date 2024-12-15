@@ -16,22 +16,13 @@ class JellyfinManager
 {
     public static $typesMap = ['Movie' => 'movie', 'Series' => 'tvSeries'];
 
+    public static function encodeItemId(array $data){
+        return base64_encode(json_encode($data));
+    }
 
     public static function decodeItemId(string $itemId){
         if (strlen($itemId) > 32) { //default is md5
-            $string = base64_decode($itemId);
-            $ids = explode("-", $string);
-            $outcome = [];
-            foreach ($ids as $id) {
-                if (str_starts_with($id, 'strm_'))
-                    $outcome['streamId'] = str_replace('strm_', '', $id);
-                if (str_starts_with($id, 'iid_'))
-                    $outcome['itemId'] = str_replace('iid_', '', $id);
-                if (str_starts_with($id, 'msid_'))
-                    $outcome['mediaSourceId'] = str_replace('msid_', '', $id);
-                if (str_starts_with($id, 'imdbid_'))
-                    $outcome['imdbId'] = str_replace('imdbid_', '', $id);
-            }
+            $outcome = json_decode(base64_decode($itemId) ,true);
             if(!isset($outcome['mediaSourceId']))
                 $outcome['mediaSourceId'] = @$outcome['streamId'];
             return $outcome;

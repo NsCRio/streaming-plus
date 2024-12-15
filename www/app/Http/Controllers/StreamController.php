@@ -15,7 +15,7 @@ use Laravel\Lumen\Routing\Controller as BaseController;
 class StreamController extends BaseController
 {
     public function getStream(Request $request){
-        return Cache::remember('stream_'.md5(json_encode($request->query())), Carbon::now()->addMinutes(10), function() use ($request) {
+        //return Cache::remember('stream_'.md5(json_encode($request->query())), Carbon::now()->addMinutes(10), function() use ($request) {
             if ($request->has('streamId')) {
                 $stream = Streams::query()->where('stream_md5', $request->get('streamId'))
                     ->orWhere('stream_jellyfin_id', $request->get('streamId'))->first();
@@ -45,6 +45,6 @@ class StreamController extends BaseController
             }
 
             return response('', 404);
-        });
+        //});
     }
 }
