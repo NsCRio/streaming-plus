@@ -1,6 +1,9 @@
-/data/
+/data
 /www/vendor
 /www/Subtitle Edit
 /www/.aspnet
-/.idea/
+/.idea
+/.git
+.gitignore
 .env
+docker-compose.yml
