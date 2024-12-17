@@ -2,12 +2,8 @@
 
 namespace App\Services\Addons;
 
-use App\Models\Addons;
-use App\Models\Items;
-use App\Models\Streams;
 use App\Services\Api\AbstractApiManager;
 use App\Services\Jellyfin\JellyfinApiManager;
-use App\Services\Jellyfin\lib\MediaSource;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 

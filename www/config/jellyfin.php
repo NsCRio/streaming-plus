@@ -5,7 +5,7 @@ return [
     'external_url' => 'http://127.0.0.1:8096',
     'movies_path' => sp_data_path('library/movies'),
     'series_path' => sp_data_path('library/tvSeries'),
-    'virtualFolders' => [
+    'virtual_folders' => [
         'Movies' => [
             'name' => 'Movies',
             'path' => sp_data_path('library/movies'),

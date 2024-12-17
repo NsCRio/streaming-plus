@@ -46,6 +46,8 @@ class IMDbDatasetRetriever extends Command
      */
     public function handle()
     {
+        dd('deprecated.');
+
         $this->info('start.');
 
         $start = microtime(true);

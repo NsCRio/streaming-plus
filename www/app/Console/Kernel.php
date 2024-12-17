@@ -18,12 +18,12 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        IMDbDatasetRetriever::class,
+        //IMDbDatasetRetriever::class,
         TestCommand::class,
 
         //Jellyfin Commands
         ClearLibraryCommand::class,
-        JellyfinSetupCommand::class,
+        //JellyfinSetupCommand::class,
     ];
 
     /**

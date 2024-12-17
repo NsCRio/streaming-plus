@@ -38,6 +38,7 @@ class JellyfinSetupCommand extends Command
      */
     public function handle()
     {
+        dd('deprecated.');
         $this->info('start.');
 
         $start = microtime(true);
@@ -62,7 +63,7 @@ class JellyfinSetupCommand extends Command
 
         $this->info('####### Create library folders #######');
 
-        foreach (config('jellyfin.virtualFolders') as $virtualFolder){
+        foreach (config('jellyfin.virtual_folders') as $virtualFolder){
             if(!file_exists($virtualFolder['path']))
                 mkdir($virtualFolder['path'], 0777, true);
 

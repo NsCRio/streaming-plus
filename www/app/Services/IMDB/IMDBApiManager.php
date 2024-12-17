@@ -60,10 +60,7 @@ class IMDBApiManager extends AbstractApiManager
                                     'type' => @$item['qid'],
                                     'year' => @$item['y'],
                                 ];
-                                //$searchItem = array_merge($searchItem, $this->getTitleDetails($searchItem['id']));
                             }
-
-                            //Cache::put('imdb_item_'.md5($searchItem['imdb_id']), $searchItem, Carbon::now()->addDay());
                             $searchResponse[] = $searchItem;
                         }
                     }
@@ -214,7 +211,7 @@ class IMDBApiManager extends AbstractApiManager
         if(Cache::has('imdb_apikey'))
             $this->apiKey = Cache::get('imdb_apikey');
         if(empty($this->apiKey)) {
-            $html = $this->apiCall("https://www.imdb.com", 'GET', [], ['referer' => 'https://www.google.com/'], true);
+            $html = $this->apiCall(config('imdb.url'), 'GET', [], ['referer' => 'https://www.google.com/'], true);
             if (!empty($html)) {
                 $crawler = new Crawler($html);
                 $script = $crawler->filterXPath('//script[contains(@src, "/_buildManifest.js")]')->attr('src');
@@ -230,7 +227,7 @@ class IMDBApiManager extends AbstractApiManager
 
     protected function apiCall(string $uri, string $method = 'GET', array $data = [], array $headers = [], $returnBody = false) : string|array|null {
         $default_headers = [
-            'referer' => 'https://www.imdb.com/',
+            'referer' => config('imdb.url').'/',
             'user-agent' => $this->getRandomAgent(),
             'accept' => 'application/json, text/plain, */*',
             //'accept-language' => 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7',

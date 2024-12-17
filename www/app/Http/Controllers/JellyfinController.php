@@ -259,7 +259,7 @@ class JellyfinController extends Controller
     public function getVirtualFolders(Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
         $api = new JellyfinApiManager();
 
-        foreach (config('jellyfin.virtualFolders') as $virtualFolder){
+        foreach (config('jellyfin.virtual_folders') as $virtualFolder){
             if(!file_exists($virtualFolder['path']))
                 mkdir($virtualFolder['path'], 0777, true);
 

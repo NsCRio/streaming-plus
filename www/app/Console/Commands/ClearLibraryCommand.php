@@ -49,22 +49,20 @@ class ClearLibraryCommand extends Command
         Artisan::call('cache:clear');
         Artisan::call('migrate:fresh');
 
-        system("rm -rf ".escapeshellarg(sp_data_path('library')), $result);
+        //Remove library folder
+        system("rm -rf ".escapeshellarg(sp_data_path('library')));
 
-        //$api = new JellyfinApiManager();
-
-        foreach (config('jellyfin.virtualFolders') as $virtualFolder){
+        //Re-create library structure
+        foreach (config('jellyfin.virtual_folders') as $virtualFolder){
             if(!file_exists($virtualFolder['path']))
                 mkdir($virtualFolder['path'], 0777, true);
 
+            //Set permissions
             system("chown -R ".env('USER_NAME').":".env('USER_NAME')." ".$virtualFolder['path']);
-            //$api->deleteVirtualFolder($virtualFolder['name']);
         }
-
-        //Artisan::call(JellyfinSetupCommand::class);
 
         $this->info("end. (".number_format(microtime(true) - $start, 2)."s)\n");
 
-        return;
+        exit(1);
     }
 }

@@ -4,16 +4,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: nscrio/streaming-plus:latest
     container_name: streaming_plus
     hostname: streamingplus
     restart: unless-stopped
     environment:
       - PUID=1000
       - GUID=1000
-      - TIMEZONE=Europe/Rome
+      - TZ=Europe/Rome
     volumes:
-      - ./www:/var/www          #Questo lo mappo solo per non buildare ogni volta
-      - ./src:/var/src          #Questo lo mappo solo per non buildare ogni volta
+      #- ./www:/var/www          #Questo lo mappo solo per non buildare ogni volta
+      #- ./src:/var/src          #Questo lo mappo solo per non buildare ogni volta
       - ./data:/data
     ports:
       - "8096:8096"
