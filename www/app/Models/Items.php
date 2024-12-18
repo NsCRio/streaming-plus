@@ -37,6 +37,15 @@ class Items extends Model
         return $this->item_path;
     }
 
+    public function updateItemToLibrary() : null|string {
+        $imdbData = ItemsManager::getImdbData($this->item_imdb_id);
+        if(!empty($imdbData)) {
+            $this->item_path = ItemsManager::putImdbDataToLocalStorage($imdbData);
+            $this->save();
+        }
+        return $this->item_path;
+    }
+
     public function removeFromLibrary(): bool {
         if(isset($this->item_path)){
             if(file_exists(sp_data_path($this->item_path))) {

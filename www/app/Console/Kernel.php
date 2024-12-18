@@ -7,6 +7,7 @@ use App\Console\Commands\IMDbDatasetRetriever;
 use App\Console\Commands\InitCommand;
 use App\Console\Commands\JellyfinSetupCommand;
 use App\Console\Commands\TestCommand;
+use App\Console\Commands\UpdateLibraryCommand;
 use Illuminate\Console\Scheduling\Schedule;
 use Laravel\Lumen\Console\Kernel as ConsoleKernel;
 
@@ -23,6 +24,7 @@ class Kernel extends ConsoleKernel
 
         //Jellyfin Commands
         ClearLibraryCommand::class,
+        UpdateLibraryCommand::class,
         //JellyfinSetupCommand::class,
     ];
 
@@ -34,7 +36,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        //$schedule->command(JellyfinSetupCommand::class)->everyFiveMinutes();
+        $schedule->command(UpdateLibraryCommand::class)->everySixHours();
         //$schedule->command('cache:clear')->everyTwoHours();
     }
 }

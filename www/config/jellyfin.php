@@ -16,5 +16,7 @@ return [
             'path' => sp_data_path('library/tvSeries'),
             'type' => 'tvshows',
         ]
-    ]
+    ],
+    'delete_unused_after' => 5, //days
+    'update_series_after' => 12, //hours
 ];
