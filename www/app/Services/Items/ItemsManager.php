@@ -3,6 +3,7 @@
 namespace App\Services\Items;
 
 use App\Models\Items;
+use App\Services\IMDB\IMDBApiManager;
 use App\Services\Jellyfin\JellyfinApiManager;
 use App\Services\Jellyfin\JellyfinManager;
 use Carbon\Carbon;
@@ -15,6 +16,21 @@ class ItemsManager
     protected $model;
     public function __construct(Items $model){
         $this->model = $model;
+    }
+
+    public static function getImdbData(string $imdbId){
+        $api = new IMDBApiManager();
+        $imdbData = $api->getTitleDetails($imdbId);
+        return !empty($imdbData) ? $imdbData : [];
+    }
+
+    public static function getImdbDataFromLocalStorage(string $imdbId, string $imdbType = null){
+        $directory = sp_data_path(self::$libraryPath.'/'.Str::plural($imdbType).'/'.$imdbId);
+        $file = $directory.'/'.$imdbId. '.json';
+        if(file_exists($file) && !Carbon::parse(filemtime($file))->isBefore(Carbon::now()->subDays(2))) {
+            return json_decode(file_get_contents($file), true);
+        }
+        return [];
     }
 
     public static function imdbDataToDatabase(array $imdbData) : null|Items {
@@ -39,15 +55,6 @@ class ItemsManager
             return $item;
         }
         return null;
-    }
-
-    public static function getImdbDataFromLocalStorage($imdbId, $imdbType){
-        $directory = sp_data_path(self::$libraryPath.'/'.Str::plural($imdbType).'/'.$imdbId);
-        $file = $directory.'/'.$imdbId. '.json';
-        if(file_exists($file) && !Carbon::parse(filemtime($file))->isBefore(Carbon::now()->subDays(2))) {
-            return json_decode(file_get_contents($file), true);
-        }
-        return [];
     }
 
     /**

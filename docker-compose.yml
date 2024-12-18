@@ -13,8 +13,8 @@ services:
       - GUID=1000
       - TZ=Europe/Rome
     volumes:
-      #- ./www:/var/www          #Questo lo mappo solo per non buildare ogni volta
-      #- ./src:/var/src          #Questo lo mappo solo per non buildare ogni volta
+      - ./www:/var/www          #Questo lo mappo solo per non buildare ogni volta
+      - ./src:/var/src          #Questo lo mappo solo per non buildare ogni volta
       - ./data:/data
     ports:
       - "8096:8096"

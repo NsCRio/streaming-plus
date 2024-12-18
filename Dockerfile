@@ -57,9 +57,6 @@ WORKDIR $WORKDIR
 COPY www $WORKDIR
 COPY src /var/src
 
-# Install Laravel dependencies via Composer
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader
-
 # Copy the PHP, Supervisor and Nginx configuration files
 ADD src/php.ini $PHP_INI_DIR/conf.d/
 ADD src/opcache.ini $PHP_INI_DIR/conf.d/

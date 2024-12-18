@@ -27,7 +27,7 @@ class JellyfinMiddleware
             $api = new JellyfinApiManager($header);
             $apiKey = $api->createApiKeyIfNotExists('streaming-plus');
             if(isset($apiKey['AccessToken']))
-                Session::put('jellyfin-api-key', $apiKey['AccessToken']);
+                Cache::put('jellyfin-api-key', $apiKey['AccessToken']);
         }
 
         putenv('JELLYFIN_URL='.env('HTTP_HOST'));

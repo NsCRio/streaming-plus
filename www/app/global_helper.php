@@ -21,7 +21,7 @@ if (!function_exists('sp_data_path')) {
 
 if (!function_exists('app_url')) {
     function app_url($path = "", array $query = []){
-        $url = "http://".env('JELLYFIN_URL');
+        $url = "http://".env('HTTP_HOST');
         if(!isset($url))
             $url = config('app.url');
         if(!empty($path)) {

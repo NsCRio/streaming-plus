@@ -13,48 +13,29 @@ use Illuminate\Support\Facades\Cache;
 class StreamsManager
 {
 
-    public static function searchStreamsByItemId(string $itemId = null, string $mediaSourceId = null, string $imdbId = null){
-        return Cache::remember('streams_item_'.md5($itemId.$mediaSourceId.$imdbId), Carbon::now()->addMinutes(10), function() use ($itemId, $mediaSourceId) {
+    public static function searchStreamsByItemId(string $itemId = null, string $mediaSourceId = null){
+        return Cache::remember('streams_item_'.md5($itemId.$mediaSourceId), Carbon::now()->addMinutes(10), function() use ($itemId, $mediaSourceId) {
             $mediaSources = [];
-
             try {
-                $api = new JellyfinApiManager();
-                $detail = $api->getItem($itemId);
-
-                if (isset($detail)) {
-                    //Get ImdbId from Jellyfin Item
-                    if (!isset($imdbId)) {
-                        $imdbId = @$detail['ProviderIds']['Imdb'];
-                        if (isset($detail['SeriesId']) && isset($detail['SeasonId'])) {
-                            $imdbId = null;
-                            $query = $api->getItemFromQuery($detail['SeriesId']);
-                            if (!empty($query)) {
-                                $imdbId = @$query['ProviderIds']['Imdb'];
-                                $imdbId = $imdbId . ':' . $detail['ParentIndexNumber'] . ':' . $detail['IndexNumber'];
-                            }
-                        }
-                    }
-
-                    $mediaSources = @$detail['MediaSources'] ?? [];
-                    $streams = self::getStreams($imdbId, $itemId, $mediaSourceId);
+                $item = JellyfinManager::getItemDetailById($itemId);
+                if (isset($item)) {
+                    $mediaSources = @$item['MediaSources'] ?? [];
+                    $streams = self::getStreams($item['imdbId'], $mediaSourceId);
 
                     //Trasforms streams into Jellyfin media source item
                     foreach ($streams as $stream) {
                         $mediaSource = MediaSource::$CONFIG;
-                        if (!empty($detail['MediaSources']))
-                            $mediaSource = $detail['MediaSources'][array_key_first($detail['MediaSources'])];
                         $mediaSource['Container'] = $stream['stream_container'];
-                        //$mediaSource['ETag'] = $stream['stream_md5'];
                         $mediaSource['MediaSourceId'] = $stream['stream_md5'];
                         $mediaSource['ItemId'] = $itemId;
-                        $mediaSource['ImdbId'] = $imdbId;
+                        $mediaSource['ImdbId'] = $item['imdbId'];
                         $mediaSource['Id'] = JellyfinManager::encodeItemId([
                             'itemId' => $itemId,
                             'streamId' => $stream['stream_md5'],
                             'mediaSourceId' => $mediaSourceId,
-                            'imdbId' => $imdbId,
+                            'imdbId' => $item['imdbId'],
                         ]);
-                        $mediaSource['Path'] = app_url('/stream?streamId=') . $stream['stream_md5'];
+                        $mediaSource['Path'] = app_url('/stream?streamId=' . $stream['stream_md5']);
                         $mediaSource['Name'] = $stream['stream_title'];
                         $mediaSources[$stream['stream_md5']] = $mediaSource;
                     }
@@ -66,21 +47,20 @@ class StreamsManager
                             return ($source['Id'] == $mediaSourceId) ? $source : null;
                         }, $mediaSources));
                     }
-                }
 
-                if (!empty($mediaSources)) {
-                    foreach ($mediaSources as $key => $mediaSource) {
-                        if ($mediaSource['Container'] == "strm") {
-                            $mediaSources[$key]['Container'] = "hls";
+                    if (!empty($mediaSources)) {
+                        foreach ($mediaSources as $key => $mediaSource) {
+                            if ($mediaSource['Container'] == "strm") {
+                                $mediaSources[$key]['Protocol'] = "Http";
+                                $mediaSources[$key]['Container'] = "hls";
+                            }
+                            if (str_starts_with($mediaSource['Name'], $item['imdbId'])) {
+                                if (count($mediaSources) > 1)
+                                    unset($mediaSources[$key]);
+                            }
                         }
-                        if (str_starts_with($mediaSource['Path'], config('app.url'))) {
-                            $mediaSources[$key]['Name'] = "Random";
-                            $mediaSources[$key]['Path'] = str_replace(config('app.url'), app_url(), $mediaSource['Path']);
-                            if (count($mediaSources) > 1)
-                                unset($mediaSources[$key]);
-                        }
+                        $mediaSources = collect($mediaSources)->sortBy('Container')->toArray();
                     }
-                    $mediaSources = collect($mediaSources)->sortBy('Container')->toArray();
                 }
             }catch (\Exception $e){}
 
@@ -103,7 +83,7 @@ class StreamsManager
                     }
                     if (!empty($sources)) {
                         foreach ($sources as $source) {
-                            $stream = self::getStreamFromSource($source, $addon, $imdbId, $itemId);
+                            $stream = self::getStreamFromSource($source, $addon, $imdbId);
                             if (!empty($stream))
                                 $streams[$stream['stream_md5']] = $stream;
                         }
@@ -116,18 +96,17 @@ class StreamsManager
     }
 
 
-    public static function getStreams(string $imdbId = null, string $itemId = null, string $mediaSourceId = null)
+    public static function getStreams(string $imdbId = null, string $streamId = null)
     {
-        $query = Streams::query();
-        if (isset($mediaSourceId)) {
-            $query->where('stream_md5', $mediaSourceId);
-        } else {
-            $query->where(function ($query) use ($imdbId, $itemId) {
-                $query->where('stream_jellyfin_id', $itemId)
-                    ->orWhere('stream_imdb_id', $imdbId);
-            });
-        }
-        $query->where('created_at', '<=', Carbon::now()->addHour())->get()->toArray();
+        $addons = AddonsApiManager::getAddons();
+        $addonsIds = array_map(function ($addon) {
+            return $addon['repository']['id'];
+        }, $addons);
+
+        $query = Streams::query()->whereIn('stream_addon_id', $addonsIds)
+            ->where(function ($query) use($imdbId, $streamId){
+                $query->where('stream_md5', $streamId)->orWhere('stream_imdb_id', $imdbId);
+            })->where('created_at', '<=', Carbon::now()->addHour())->get()->toArray();
 
         $streams = [];
         foreach ($query as $stream) {
@@ -135,12 +114,12 @@ class StreamsManager
         }
 
         if(isset($imdbId))
-            $streams = array_merge($streams, self::searchStreamsFromAddons($imdbId, $itemId));
+            $streams = array_merge($streams, self::searchStreamsFromAddons($imdbId));
 
         return array_values($streams);
     }
 
-    protected static function getStreamFromSource(array $source, array $addon = [], string $imdbId = null, string $itemId = null){
+    protected static function getStreamFromSource(array $source, array $addon = [], string $imdbId = null){
         if (isset($source['infoHash']) && isset($source['behaviorHints'])) {
             if(isset($source['behaviorHints']['filename'])){
                 $file = pathinfo($source['behaviorHints']['filename']);
@@ -163,19 +142,17 @@ class StreamsManager
             if(!empty(@$source['description']))
                 $title .= " - " . @$source['description'];
 
-            $stream = Streams::query()->where('stream_md5', md5($source['url']))->first();
+            $stream = Streams::query()->where('stream_md5', md5(trim($source['url'])))->first();
             if (!isset($stream))
                 $stream = new Streams();
-            $stream->stream_md5 = md5($source['url']);
+            $stream->stream_md5 = md5(trim($source['url']));
             $stream->stream_url = $source['url'];
             $stream->stream_protocol = isset($source['infoHash']) ? "torrent" : "http";
             $stream->stream_container = $container;
-            $stream->stream_addon_id = $addon['repository']['id'];
-            if (isset($itemId))
-                $stream->stream_jellyfin_id = $itemId;
+            $stream->stream_addon_id = @$addon['repository']['id'];
             $stream->stream_imdb_id = $imdbId;
             $stream->stream_title = $title;
-            $stream->stream_host = $addon['repository']['host'];
+            $stream->stream_host = @$addon['repository']['host'];
             $stream->save();
             return $stream->toArray();
         }

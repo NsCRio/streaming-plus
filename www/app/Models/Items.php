@@ -15,15 +15,15 @@ class Items extends Model
     public $timestamps = true;
 
     public function getImdbData(){
-        $imdbData = Cache::get('imdb_item_' . md5($this->item_imdb_id), []);
-        if(isset($this->item_path) && empty($imdbData)){
-            $json = sp_data_path($this->item_path.'/'.$this->item_imdb_id.'.json');
-            if(file_exists($json))
-                $imdbData = json_decode(file_get_contents($json), true);
-        }
-        if(empty($imdbData)){
-            $api = new IMDBApiManager();
-            $imdbData = $api->getTitleDetails($this->item_imdb_id);
+        $imdbData = [];
+        if(isset($this->item_imdb_id)) {
+            if (isset($this->item_path) && empty($imdbData)) {
+                $json = sp_data_path($this->item_path . '/' . $this->item_imdb_id . '.json');
+                if (file_exists($json))
+                    $imdbData = json_decode(file_get_contents($json), true);
+            }
+            if (empty($imdbData))
+                $imdbData = ItemsManager::getImdbData($this->item_imdb_id);
         }
         return $imdbData;
     }

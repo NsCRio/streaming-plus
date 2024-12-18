@@ -57,47 +57,42 @@ class JellyfinApiManager extends AbstractApiManager
     }
 
     public function getItems(array $query = []){
-        $query = array_merge($query, ['spCall' => true]);
         return $this->apiCall('/Items', 'GET', $query);
     }
 
     public function getItem(string $itemId, array $query = []){
-        $query = array_merge($query, ['spCall' => true]);
         return $this->apiCall('/Items/'.$itemId, 'GET', $query);
     }
 
     public function deleteItem(string $itemId, array $query = []){
-        $query = array_merge($query, ['spCall' => true]);
         return $this->apiCall('/Items/'.$itemId, 'DELETE', $query);
     }
 
     public function getItemImage(string $itemId, string $imageType, array $query = []){
-        $query = array_merge($query, ['spCall' => true]);
         return $this->apiCall('/Items/'.$itemId.'/Images/'.$imageType, 'GET', $query);
     }
 
     public function getItemPlaybackInfo(string $itemId, array $query = []){
-        $query = array_merge($query, ['spCall' => true]);
         return $this->apiCall('/Items/'.$itemId.'/PlaybackInfo', 'GET', $query);
     }
 
+    public function postItemPlaybackInfo(string $itemId, array $query = [], array $data = []){
+        return $this->apiCall('/Items/'.$itemId.'/PlaybackInfo?'.http_build_query($query), 'POST_BODY', $data);
+    }
+
     public function getItemThemeMedia(string $itemId, array $query = []){
-        $query = array_merge($query, ['spCall' => true]);
         return $this->apiCall('/Items/'.$itemId.'/ThemeMedia', 'GET', $query);
     }
 
     public function getItemSimilar(string $itemId, array $query = []){
-        $query = array_merge($query, ['spCall' => true]);
         return $this->apiCall('/Items/'.$itemId.'/Similar', 'GET', $query);
     }
 
     public function getUsersItem(string $userId, string $itemId, array $query = []){
-        $query = array_merge($query, ['spCall' => true]);
         return $this->apiCall('/Users/'.$userId.'/Items/'.$itemId, 'GET', $query);
     }
 
     public function getUsersItems(string $userId, array $query = []){
-        $query = array_merge($query, ['spCall' => true]);
         return $this->apiCall('/Users/'.$userId.'/Items', 'GET', $query);
     }
 
@@ -112,32 +107,26 @@ class JellyfinApiManager extends AbstractApiManager
     }
 
     public function setSessionsPlaying(array $query = []){
-        $query = array_merge($query, ['spCall' => true]);
         return $this->apiCall('/Sessions/Playing', 'POST_BODY', $query);
     }
 
     public function setSessionsPlayingProgress(array $query = []){
-        $query = array_merge($query, ['spCall' => true]);
         return $this->apiCall('/Sessions/Playing/Progress', 'POST_BODY', $query);
     }
 
     public function getPersons(array $query = []){
-        $query = array_merge($query, ['spCall' => true]);
         return $this->apiCall('/Persons', 'GET', $query);
     }
 
     public function getArtists(array $query = []){
-        $query = array_merge($query, ['spCall' => true]);
         return $this->apiCall('/Artists', 'GET', $query);
     }
 
     public function getPlugins(array $query = []){
-        $query = array_merge($query, ['spCall' => true]);
         return $this->apiCall('/Plugins', 'GET', $query);
     }
 
     public function getPackages(array $query = []){
-        $query = array_merge($query, ['spCall' => true]);
         return $this->apiCall('/Packages', 'GET', $query);
     }
 
@@ -299,9 +288,9 @@ class JellyfinApiManager extends AbstractApiManager
             $default_headers = $this->headers;
 
         $headers = array_merge($default_headers, $headers);
-        if(Session::get('jellyfin-api-key', false) && !isset($headers['authorization']) && !isset($headers['x-emby-token'])
+        if(Cache::get('jellyfin-api-key', false) && !isset($headers['authorization']) && !isset($headers['x-emby-token'])
             && !isset($headers['Authorization']) && !isset($headers['X-Emby-Token']))
-            $headers['x-emby-token'] = Session::get('jellyfin-api-key');
+            $headers['x-emby-token'] = Cache::get('jellyfin-api-key');
 
         return parent::apiCall($uri, $method, $data, $headers);
     }

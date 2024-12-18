@@ -30,6 +30,28 @@ class JellyfinManager
         return ['itemId' => $itemId];
     }
 
+    public static function getItemDetailById(string $itemId, array $query = []){
+        $api = new JellyfinApiManager();
+        if(!empty($query)){
+            $detail = $api->getItemFromQuery($itemId, $query);
+        }else{
+            $detail = $api->getItem($itemId);
+        }
+        if(isset($detail)) {
+            $imdbId = @$detail['ProviderIds']['Imdb'];
+            $tmdbId = @$detail['ProviderIds']['Tmdb'];
+            if (isset($detail['SeriesId']) && isset($detail['SeasonId'])) {
+                $query = $api->getItemFromQuery($detail['SeriesId']);
+                if (!empty($query)) {
+                    $imdbId = @$query['ProviderIds']['Imdb'] . ':' . $detail['ParentIndexNumber'] . ':' . $detail['IndexNumber'];
+                    $tmdbId = @$query['ProviderIds']['Tmdb'] . ':' . $detail['ParentIndexNumber'] . ':' . $detail['IndexNumber'];
+                }
+            }
+            $detail['imdbId'] = $imdbId;
+            $detail['tmdbId'] = $tmdbId;
+        }
+        return $detail ?? [];
+    }
 
     /**
      * @throws \Exception
@@ -65,8 +87,7 @@ class JellyfinManager
     }
 
 
-    public static function getItemById(string $itemId, array $query = null): null|array {
-        $outcome = [];
+    public static function getItemById(string $itemId, array $query = []): null|array {
         $itemData = self::decodeItemId($itemId);
 
         //Is an item from search view that is not yet in the Library
@@ -75,24 +96,21 @@ class JellyfinManager
             return $item->getJellyfinDetailItem();
 
         //Search from Jellyfin items on Library
-        if (!empty($query)) {
-            $api = new JellyfinApiManager();
-            $outcome = $api->getItemFromQuery($itemData['itemId'], $query);
-            if(!empty($outcome)){
-                //Adds Streams url to Item
-                $outcome['MediaSources'] = StreamsManager::searchStreamsByItemId($itemData['itemId'], @$itemData['streamId'], @$itemData['imdbId']);
-                //Save some useful information for DB
-                $imdbId = @$outcome['ProviderIds']['Imdb'];
-                if (isset($imdbId)) {
-                    $item = Items::query()->where('item_imdb_id', $imdbId)->first();
-                    if (isset($item)) {
-                        $item->item_jellyfin_id = $itemData['itemId'];
-                        $item->item_tmdb_id = @$outcome['ProviderIds']['Tmdb'];
-                        $item->save();
-                    }
+        $outcome = self::getItemDetailById($itemData['itemId'], $query);
+        if(!empty($outcome)){
+            //Adds Streams url to Item
+            $outcome['MediaSources'] = StreamsManager::searchStreamsByItemId($itemData['itemId'], @$itemData['streamId']);
+            //Save some useful information for DB
+            if (isset($outcome['imdbId'])) {
+                $item = Items::query()->where('item_imdb_id', $outcome['imdbId'])->first();
+                if (isset($item)) {
+                    $item->item_jellyfin_id = $itemData['itemId'];
+                    $item->item_tmdb_id = $outcome['tmdbId'];
+                    $item->save();
                 }
             }
         }
+
         return $outcome;
     }
 
@@ -102,6 +120,13 @@ class JellyfinManager
         $response = $api->getItemPlaybackInfo($itemId);
         $response['MediaSources'] = StreamsManager::searchStreamsByItemId($itemId, $mediaSourceId);
         return $response ?? [];
+    }
+
+    public static function getStreamByItemId(string $itemId, string $mediaSourceId): null|array {
+        $streams = self::getStreamsByItemId($itemId, $mediaSourceId);
+        if(!empty($streams) && !empty($streams['MediaSources']))
+            return $streams['MediaSources'][array_key_first($streams['MediaSources'])];
+        return null;
     }
 
     /**
@@ -122,7 +147,14 @@ class JellyfinManager
      */
     protected static function createSeasonsStructure(string $directory, array $imdbData){
         foreach($imdbData['seasons'] as $season => $episodes) {
-            $seasonPath = $directory."/Season ".sprintf("%02d", $season);
+            $seasonPath = $directory."/".$imdbData['imdb_id'].":".$season;
+            $season = [
+                'type' => 'tvSeason',
+                'parent_imdb_id' => $imdbData['imdb_id'],
+                'title' => "Season ".sprintf("%02d", $season),
+                'seasonnumber' => $season,
+            ];
+            self::createNfoFile($seasonPath, $season);
 
             if(!file_exists($seasonPath))
                 mkdir($seasonPath, 0777, true);
@@ -138,13 +170,14 @@ class JellyfinManager
      * @throws \Exception
      */
     protected static function createNfoFile(string $directory, array $imdbData): ?string {
-        $typeMap = ['movie' => 'movie', 'tvSeries' => 'tvshow', 'tvEpisode' => 'episodedetails'];
+        $typeMap = ['movie' => 'movie', 'tvSeries' => 'tvshow', 'tvSeason' => 'season', 'tvEpisode' => 'episodedetails'];
         if(in_array($imdbData['type'], array_keys($typeMap))){
             try {
                 $type = $typeMap[$imdbData['type']];
                 $filePath = $directory . "/" . $type . ".nfo";
+
                 if($type == "episodedetails") {
-                    $fileName = 'Episode S'.sprintf("%02d", $imdbData['season']).'E'.sprintf("%02d", $imdbData['episode']);
+                    $fileName = $imdbData['parent_imdb_id'].":".$imdbData['season'].":".$imdbData['episode'];
                     $filePath = $directory . "/" . $fileName . ".nfo";
                 }
 
@@ -157,7 +190,7 @@ class JellyfinManager
                 unset($imdbData['totalEpisodes']);
                 $imdbData['lockdata'] = "false";
 
-                if($imdbData['type'] !== "tvEpisode") {
+                if($type !== "season" && $type !== "episodedetails") {
                     $imagePath = $directory . "/folder.jpeg";
                     if (!file_exists($imagePath)) {
                         try {
@@ -188,25 +221,19 @@ class JellyfinManager
      */
     public static function createStrmFile(string $directory, array $imdbData): ?string {
         try {
-            $streamName = "";
-            $filePath = $directory . "/" . @$imdbData['imdb_id'];
-            $filePath .= (!empty($streamName) ? '-' . $streamName : "") . ".strm";
-            $streamUrl = config('app.url').'/stream?';
+            $filePath = $directory . "/" . @$imdbData['imdb_id'] . ".strm";
+            $streamUrl = '/stream?';
             $fileContent = $streamUrl.http_build_query([
-                'imdbId' => @$imdbData['imdb_id'],
-                //'provider' => (!empty($streamName) ? md5($streamName) : "")
+                'imdbId' => @$imdbData['imdb_id']
             ]);
 
             if ($imdbData['type'] == "tvEpisode") {
-                $fileName = 'Episode S' . sprintf("%02d", $imdbData['season']) . 'E' . sprintf("%02d", $imdbData['episode']);
-                $filePath = $directory . "/" . $fileName;
-                $filePath .= (!empty($streamName) ? '-' . $streamName : "") . ".strm";
+                //$fileName = 'Episode S' . sprintf("%02d", $imdbData['season']) . 'E' . sprintf("%02d", $imdbData['episode']);
+                $fileName = $imdbData['parent_imdb_id'].":".$imdbData['season'].":".$imdbData['episode'];
+                $filePath = $directory . "/" . $fileName . ".strm";
 
                 $fileContent = $streamUrl.http_build_query([
-                    'imdbId' => @$imdbData['parent_imdb_id'],
-                    'season' => $imdbData['season'],
-                    'episode' => $imdbData['episode'],
-                    //'provider' => (!empty($streamName) ? md5($streamName) : "")
+                    'imdbId' => urlencode($fileName),
                 ]);
             }
 

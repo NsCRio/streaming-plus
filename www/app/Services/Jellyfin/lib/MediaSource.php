@@ -9,7 +9,7 @@ class MediaSource
           "Id" => null,
           "Path" => null,
           "Type" => "Default",
-          "Container" => "hls",
+          "Container" => "strm",
           "Size" => null,
           "Name" => null,
           "IsRemote" => true,
@@ -34,8 +34,11 @@ class MediaSource
           "Formats" => [],
           "Bitrate" => null,
           "RequiredHttpHeaders" => [],
+          "TranscodingUrl" => null,
           "TranscodingSubProtocol" => "http",
-          "DefaultAudioStreamIndex" => 1,
+          "TranscodingContainer" => null,
+          "DefaultAudioStreamIndex" => 0,
+          "DefaultSubtitleStreamIndex" => -1,
           "HasSegments" => false,
     ];
 }

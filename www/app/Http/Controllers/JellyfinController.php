@@ -16,31 +16,6 @@ use Illuminate\Support\Facades\Session;
 
 class JellyfinController extends Controller
 {
-
-    public function getStream(string $itemId, string $streamType, Request $request){
-        $response = [];
-
-        if($request->has('mediaSourceId')){
-            $itemData = JellyfinManager::decodeItemId($request->get('mediaSourceId'));
-            if(isset($itemData['streamId'])) {
-                $stream = Streams::query()->where('stream_md5', $itemData['streamId'])->first();
-                if(isset($stream)) {
-                    if($stream->stream_protocol == "torrent") {
-                        return redirect(app_url('/stream-torrent/'.$stream->stream_url), 301);
-                    }else {
-                        $file = pathinfo($stream->stream_url);
-                        if (in_array($file['extension'], ['m3u', 'm3u8'])) {
-                            return response(file_get_contents($stream->stream_url), 200);
-                        }
-                        return redirect($stream->stream_url, 301);
-                    }
-                }
-            }
-        }
-
-        return response($response, 200);
-    }
-
     /*
      * Items Routes
      */
@@ -83,19 +58,40 @@ class JellyfinController extends Controller
         return response(file_get_contents(jellyfin_url($request->path(), $request->query())), 200)->header('Content-Type', 'image/webp');
     }
 
-    public function getItemsPlaybackInfo(string $itemId, Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
-        $mediaSourceId = $request->post('MediaSourceId', null);
 
+    public function getItemsPlaybackInfo(string $itemId, Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+        $api = new JellyfinApiManager();
+        $response = $api->getItemPlaybackInfo($itemId, $request->all());
+        return response($response)->header('Content-Type', 'application/json');
+    }
+
+    public function postItemsPlaybackInfo(string $itemId, Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+        $mediaSourceId = $request->post('MediaSourceId', null);
         $itemData = ['itemId' => $itemId, 'mediaSourceId' => $mediaSourceId];
         if(isset($mediaSourceId))
             $itemData = JellyfinManager::decodeItemId($mediaSourceId);
 
-        $response = JellyfinManager::getStreamsByItemId($itemData['itemId'], @$itemData['mediaSourceId']);
-//        if(!empty($response['MediaSources']))
-//            $response['MediaSources'][array_key_first($response['MediaSources'])]['Id'] = $itemData['itemId'];
+        $item = JellyfinManager::getItemDetailById($itemData['itemId']);
+        file_put_contents($item['Path'], app_url('/stream?imdbId=' . $item['imdbId']));
 
-        //dd($response);
-        return response($response)->header('Content-Type', 'application/json');
+        $api = new JellyfinApiManager();
+        $data = $request->post();
+        $data['MediaSourceId'] = $itemData['itemId'];
+        $response = $api->postItemPlaybackInfo($itemId, $request->query(), $data);
+
+        $item = JellyfinManager::getItemDetailById($itemData['itemId']);
+        if(!empty($response['MediaSources'])) {
+            $key = array_key_first($response['MediaSources']);
+            if(str_starts_with($response['MediaSources'][$key]['Name'], $item['imdbId'])) {
+                if (isset($itemData['streamId']))
+                    $response['MediaSources'][$key]['Path'] = app_url('/stream?streamId=' . $itemData['streamId']);
+                $response['MediaSources'][$key]['SupportsDirectStream'] = true;
+                $response['MediaSources'][$key]['SupportsDirectPlay'] = true;
+                $response['MediaSources'][$key]['DefaultAudioStreamIndex'] = 0;
+            }
+        }
+
+        return response($response, 200)->header('Content-Type', 'application/json');
     }
 
     public function getItemsThemeMedia(string $itemId, Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
