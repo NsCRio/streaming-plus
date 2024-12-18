@@ -72,23 +72,25 @@ class JellyfinController extends Controller
             $itemData = JellyfinManager::decodeItemId($mediaSourceId);
 
         $item = JellyfinManager::getItemDetailById($itemData['itemId']);
-        file_put_contents($item['Path'], app_url('/stream?imdbId=' . $item['imdbId']));
+        if(str_contains($item['Path'], '.strm')){
+            $mediaSource = $item['MediaSources'][array_key_first($item['MediaSources'])];
+            $path = '/stream?imdbId=' . urlencode(urldecode($item['imdbId']));
+            if(in_array($mediaSource['Path'], [$path, app_url($path)]))
+                file_put_contents($item['Path'], app_url($path));
+        }
 
         $api = new JellyfinApiManager();
         $data = $request->post();
         $data['MediaSourceId'] = $itemData['itemId'];
         $response = $api->postItemPlaybackInfo($itemId, $request->query(), $data);
 
-        $item = JellyfinManager::getItemDetailById($itemData['itemId']);
         if(!empty($response['MediaSources'])) {
             $key = array_key_first($response['MediaSources']);
-            if(str_starts_with($response['MediaSources'][$key]['Name'], $item['imdbId'])) {
-                if (isset($itemData['streamId']))
-                    $response['MediaSources'][$key]['Path'] = app_url('/stream?streamId=' . $itemData['streamId']);
-                $response['MediaSources'][$key]['SupportsDirectStream'] = true;
-                $response['MediaSources'][$key]['SupportsDirectPlay'] = true;
-                $response['MediaSources'][$key]['DefaultAudioStreamIndex'] = 0;
-            }
+            if (isset($itemData['streamId']))
+                $response['MediaSources'][$key]['Path'] = app_url('/stream?streamId='.$itemData['streamId']);
+            $response['MediaSources'][$key]['SupportsDirectStream'] = true;
+            $response['MediaSources'][$key]['SupportsDirectPlay'] = true;
+            $response['MediaSources'][$key]['DefaultAudioStreamIndex'] = 0;
         }
 
         return response($response, 200)->header('Content-Type', 'application/json');

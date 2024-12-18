@@ -50,13 +50,14 @@ class StreamsManager
 
                     if (!empty($mediaSources)) {
                         foreach ($mediaSources as $key => $mediaSource) {
+                            if(str_contains($item['Path'], '.strm')){
+                                $path = file_get_contents($item['Path']);
+                                if($path === $mediaSource['Path'])
+                                    $mediaSources[$key]['Name'] = "Default";
+                            }
                             if ($mediaSource['Container'] == "strm") {
                                 $mediaSources[$key]['Protocol'] = "Http";
                                 $mediaSources[$key]['Container'] = "hls";
-                            }
-                            if (str_starts_with($mediaSource['Name'], $item['imdbId'])) {
-                                if (count($mediaSources) > 1)
-                                    unset($mediaSources[$key]);
                             }
                         }
                         $mediaSources = collect($mediaSources)->sortBy('Container')->toArray();
@@ -64,6 +65,7 @@ class StreamsManager
                 }
             }catch (\Exception $e){}
 
+            ksort($mediaSources);
             return array_values($mediaSources);
         });
     }

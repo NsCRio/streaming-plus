@@ -228,12 +228,11 @@ class JellyfinManager
             ]);
 
             if ($imdbData['type'] == "tvEpisode") {
-                //$fileName = 'Episode S' . sprintf("%02d", $imdbData['season']) . 'E' . sprintf("%02d", $imdbData['episode']);
                 $fileName = $imdbData['parent_imdb_id'].":".$imdbData['season'].":".$imdbData['episode'];
                 $filePath = $directory . "/" . $fileName . ".strm";
 
                 $fileContent = $streamUrl.http_build_query([
-                    'imdbId' => urlencode($fileName),
+                    'imdbId' => $fileName,
                 ]);
             }
 
