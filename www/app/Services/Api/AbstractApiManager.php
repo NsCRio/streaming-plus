@@ -3,6 +3,7 @@
 namespace App\Services\Api;
 
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Log;
 
 class AbstractApiManager
 {
@@ -44,6 +45,7 @@ class AbstractApiManager
             }
             return $response;
         }catch (\GuzzleHttp\Exception\ClientException $e){
+            Log::error($e->getMessage(), $e->getResponse());
             //dd($e->getResponse(), $e->getMessage(), $e->getResponse()->getBody()->getContents());
         }
         return null;

@@ -52,10 +52,10 @@ class JellyfinController extends Controller
         $item = Items::where('item_md5', $itemId)->first();
         if(isset($item->item_image_url)){
             return Cache::remember('item_image_'.md5($itemId.$imageId), Carbon::now()->addDay(), function () use ($item) {
-                return response(file_get_contents($item->item_image_url), 200)->header('Content-Type', 'image/jpeg');
+                return response(@file_get_contents($item->item_image_url), 200)->header('Content-Type', 'image/jpeg');
             });
         }
-        return response(file_get_contents(jellyfin_url($request->path(), $request->query())), 200)->header('Content-Type', 'image/webp');
+        return response(@file_get_contents(jellyfin_url($request->path(), $request->query())), 200)->header('Content-Type', 'image/webp');
     }
 
 

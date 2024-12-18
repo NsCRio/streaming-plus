@@ -55,7 +55,7 @@ class Items extends Model
         if($withImdbData)
             $imdbData = $this->getImdbData();
 
-        $overview = "<span style='color: #8e2f96'><b>Click on the Heart icon to add this item to the library.</b></span>";
+        $overview = "Click on the ♥ Heart icon to add this item to the library.";
 
         $outcome = \App\Services\Jellyfin\lib\Items::$CONFIG;
         $outcome['CommunityRating'] = @$imdbData['rating'];
