@@ -66,32 +66,36 @@ class JellyfinController extends Controller
     }
 
     public function postItemsPlaybackInfo(string $itemId, Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
-        $mediaSourceId = $request->post('MediaSourceId', null);
-        $itemData = ['itemId' => $itemId, 'mediaSourceId' => $mediaSourceId];
-        if(isset($mediaSourceId))
-            $itemData = JellyfinManager::decodeItemId($mediaSourceId);
+        $data = $request->post();
+
+        $itemData = ['itemId' => $itemId, 'mediaSourceId' => @$data['MediaSourceId']];
+        if(isset($data['MediaSourceId']))
+            $itemData = JellyfinManager::decodeItemId($data['MediaSourceId']);
+
 
         $item = JellyfinManager::getItemDetailById($itemData['itemId']);
-        if(str_contains($item['Path'], '.strm')){
+        if (str_ends_with($item['Path'], '.strm')) {
             $mediaSource = $item['MediaSources'][array_key_first($item['MediaSources'])];
-            $path = '/stream?imdbId=' . urlencode(urldecode($item['imdbId']));
-            if(in_array($mediaSource['Path'], [$path, app_url($path)]))
-                file_put_contents($item['Path'], app_url($path));
+
+            $source = '/stream?imdbId=' . $item['imdbId'];
+            $currentSource = file_get_contents($item['Path']);
+            if(@$data['MediaSourceId'] !== $itemData['mediaSourceId'] || $mediaSource['Protocol'] == "File" ||
+                !isset($currentSource) || !isset(parse_url($currentSource)['host']) || parse_url($currentSource)['host'] != parse_url(app_url())['host']){
+
+                if (isset($itemData['streamId']))
+                    $source = '/stream?streamId=' . $itemData['streamId'];
+                if ($mediaSource['Name'] == $item['imdbId'])
+                    file_put_contents($item['Path'], app_url($source));
+            }
+
+            $data['MediaSourceId'] = $itemData['itemId'];
+            $data['AllowVideoStreamCopy'] = true;
+            $data['EnableDirectPlay'] = true;
+            $data['EnableDirectStream'] = true;
         }
 
         $api = new JellyfinApiManager();
-        $data = $request->post();
-        $data['MediaSourceId'] = $itemData['itemId'];
         $response = $api->postItemPlaybackInfo($itemId, $request->query(), $data);
-
-        if(!empty($response['MediaSources'])) {
-            $key = array_key_first($response['MediaSources']);
-            if (isset($itemData['streamId']))
-                $response['MediaSources'][$key]['Path'] = app_url('/stream?streamId='.$itemData['streamId']);
-            $response['MediaSources'][$key]['SupportsDirectStream'] = true;
-            $response['MediaSources'][$key]['SupportsDirectPlay'] = true;
-            $response['MediaSources'][$key]['DefaultAudioStreamIndex'] = 0;
-        }
 
         return response($response, 200)->header('Content-Type', 'application/json');
     }

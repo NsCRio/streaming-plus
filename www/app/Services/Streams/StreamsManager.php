@@ -50,10 +50,12 @@ class StreamsManager
 
                     if (!empty($mediaSources)) {
                         foreach ($mediaSources as $key => $mediaSource) {
-                            if(str_contains($item['Path'], '.strm')){
+                            if(str_ends_with($item['Path'], '.strm')){
                                 $path = file_get_contents($item['Path']);
-                                if($path === $mediaSource['Path'])
+                                if($path === $mediaSource['Path']) {
                                     $mediaSources[$key]['Name'] = "Default";
+                                    $mediaSources[$key]['Path'] = app_url('/stream?imdbId=' . $item['imdbId']);
+                                }
                             }
                             if ($mediaSource['Container'] == "strm") {
                                 $mediaSources[$key]['Protocol'] = "Http";

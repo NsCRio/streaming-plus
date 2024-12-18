@@ -27,7 +27,7 @@ class JellyfinManager
                 $outcome['mediaSourceId'] = @$outcome['streamId'];
             return $outcome;
         }
-        return ['itemId' => $itemId];
+        return ['itemId' => $itemId, 'mediaSourceId' => $itemId];
     }
 
     public static function getItemDetailById(string $itemId, array $query = []){

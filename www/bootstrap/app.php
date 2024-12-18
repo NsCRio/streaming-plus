@@ -69,6 +69,7 @@ $app->singleton('session.store', function () use ($app) {
 $app->configure('app');
 $app->configure('database');
 $app->configure('cache');
+$app->configure('logging');
 $app->configure('jellyfin');
 $app->configure('imdb');
 $app->configure('torrent');
