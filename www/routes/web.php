@@ -36,6 +36,7 @@ $router->delete('/Library/VirtualFolders',                      ['as'=> 'jellyfi
 
 $router->get('/Items',                                          ['as'=> 'jellyfin.items', 'uses'=>'JellyfinController@getItems']);
 $router->get('/Items/{itemId}',                                 ['as'=> 'jellyfin.items.detail', 'uses'=>'JellyfinController@getItem']);
+$router->post('/Items/{itemId}',                                ['as'=> 'jellyfin.items.post', 'uses'=>'JellyfinController@postItem']);
 $router->delete('/Items/{itemId}',                              ['as'=> 'jellyfin.items.delete', 'uses'=>'JellyfinController@deleteItem']);
 $router->get('/Items/{itemId}/ThemeMedia',                      ['as'=> 'jellyfin.items.theme_media', 'uses'=>'JellyfinController@getItemsThemeMedia']);
 $router->get('/Items/{itemId}/Similar',                         ['as'=> 'jellyfin.items.similar', 'uses'=>'JellyfinController@getItemsSimilar']);
@@ -44,6 +45,7 @@ $router->post('/Items/{itemId}/PlaybackInfo',                   ['as'=> 'jellyfi
 $router->get('/Items/{itemId}/Images/{imageId}',                ['as'=> 'jellyfin.items.images', 'uses'=>'JellyfinController@getItemsImages']);
 
 $router->get('/Users/{userId}/Items',                           ['as'=> 'jellyfin.users.items', 'uses'=>'JellyfinController@getUsersItems']);
+$router->get('/Users/{userId}/Items/Latest',                    ['as'=> 'jellyfin.users.items.latest', 'uses'=>'JellyfinController@getUsersItemsLatest']);
 $router->get('/Users/{userId}/Items/{itemId}',                  ['as'=> 'jellyfin.users.item', 'uses'=>'JellyfinController@getUsersItem']);
 $router->get('/Users/{userId}/Items/{itemId}/PlaybackInfo',     ['as'=> 'jellyfin.users.item.playback_info', 'uses'=>'JellyfinController@getUsersItemPlaybackInfo']);
 $router->post('/Users/{userId}/FavoriteItems/{itemId}',         ['as'=> 'jellyfin.users.item.favorite', 'uses'=>'JellyfinController@postUsersItemFavorite']);

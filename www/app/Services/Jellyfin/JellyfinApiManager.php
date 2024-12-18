@@ -64,12 +64,24 @@ class JellyfinApiManager extends AbstractApiManager
         return $this->apiCall('/Items/'.$itemId, 'GET', $query);
     }
 
+    public function postItem(string $itemId, array $data = []){
+        return $this->apiCall('/Items/'.$itemId, 'POST_BODY', $data);
+    }
+
     public function deleteItem(string $itemId, array $query = []){
         return $this->apiCall('/Items/'.$itemId, 'DELETE', $query);
     }
 
     public function getItemImage(string $itemId, string $imageType, array $query = []){
         return $this->apiCall('/Items/'.$itemId.'/Images/'.$imageType, 'GET', $query);
+    }
+
+    public function getItemsLatest(array $query = []){
+        return $this->apiCall('/Items', 'GET', $query);
+    }
+
+    public function getUsersItemsLatest(string $userId, array $query = []){
+        return $this->apiCall('/Users/'.$userId.'/Items/Latest', 'GET', $query);
     }
 
     public function getItemPlaybackInfo(string $itemId, array $query = []){

@@ -96,12 +96,7 @@ class AddonsApiManager extends AbstractApiManager
     }
 
     public function getTVChannelsList(string $genre = null){
-        if(isset($genre)){
-            $response = $this->apiCall('/catalog/tv/tv_channels/genre='.urlencode($genre).'.json');
-        }else{
-            $response = $this->apiCall('/catalog/tv/tv_channels.json');
-        }
-        return @$response['metas'];
+        return $this->getCatalog('tv', 'tv_channels', $genre);
     }
 
     public function getTVChannel(string $channelId){
@@ -136,6 +131,15 @@ class AddonsApiManager extends AbstractApiManager
         }
 
         return null;
+    }
+
+    public function getCatalog(string $type, string $id, string $genre = null){
+        if(isset($genre)) {
+            $response = $this->apiCall('/catalog/' . urlencode($type) . '/' . urlencode($id) . '/genre='.urlencode($genre).'.json');
+        }else{
+            $response = $this->apiCall('/catalog/' . urlencode($type) . '/' . urlencode($id) . '.json');
+        }
+        return @$response['metas'];
     }
 
 }

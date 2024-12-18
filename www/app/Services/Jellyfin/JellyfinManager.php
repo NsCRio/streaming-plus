@@ -30,7 +30,13 @@ class JellyfinManager
         return ['itemId' => $itemId, 'mediaSourceId' => $itemId];
     }
 
-    public static function getItemDetailById(string $itemId, array $query = []){
+    /**
+     * @param string $itemId
+     * @param array $query
+     * @return array
+     */
+
+    public static function getItemDetailById(string $itemId, array $query = []): array {
         $api = new JellyfinApiManager();
         if(!empty($query)){
             $detail = $api->getItemFromQuery($itemId, $query);
@@ -51,6 +57,46 @@ class JellyfinManager
             $detail['tmdbId'] = $tmdbId;
         }
         return $detail ?? [];
+    }
+
+    /**
+     * @param string $type
+     * @param int $limit
+     * @return array
+     */
+
+    public static function getDashboardTopItems(string $type = "movie", array $query = [], int $limit = 10): array {
+        //return Cache::remember('jellyfin_dashboard_items_'.md5($type.$limit), Carbon::now()->addHours(2), function () use ($type, $limit) {
+            $api = new AddonsApiManager(config('cinemeta.url'));
+            $catalog = $api->getCatalog($type, 'top');
+            if($limit > 0)
+                $catalog = array_values(array_slice($catalog, 0, $limit));
+            $outcome = [];
+            foreach($catalog as $outcomeItem){
+                $item = Items::query()->where('item_imdb_id', $outcomeItem['imdb_id'])->first();
+                if(!isset($item)) {
+                    $api = new JellyfinApiManager();
+                    $system = $api->getSystemInfo();
+
+                    $typeMap = ['movie' => 'movie', 'series' => 'tvSeries'];
+                    $item = new Items();
+                    $item->item_md5 = @md5(@$outcomeItem['imdb_id']);
+                    $item->item_imdb_id = @$outcomeItem['imdb_id'];
+                    $item->item_tmdb_id = @$outcomeItem['moviedb_id'];
+                    $item->item_type = @$typeMap[@$outcomeItem['type']];
+                    $item->item_title = @$outcomeItem['name'];
+                    $item->item_original_title = @$outcomeItem['name'];
+                    $item->item_year = @$outcomeItem['year'];
+                    $item->item_image_url = @$outcomeItem['poster'];
+                    $item->item_image_md5 = @md5(@$outcomeItem['poster']);
+                    $item->item_server_id = @$system['Id'];
+                    $item->save();
+                }
+                $resultType = !isset($query['MediaTypes']) ? "CollectionFolder" : "Video";
+                $outcome[$item->item_md5] = $item->getJellyfinListItem($resultType);
+            }
+            return array_values($outcome);
+        //});
     }
 
     /**
@@ -132,7 +178,7 @@ class JellyfinManager
     /**
      * @throws \Exception
      */
-    public static function createStructure(string $directory, array $imdbData){
+    public static function createStructure(string $directory, array $imdbData): void {
         self::createNfoFile($directory, $imdbData);
         if(!empty($imdbData['seasons'])){
             self::createSeasonsStructure($directory, $imdbData);
@@ -145,7 +191,7 @@ class JellyfinManager
     /**
      * @throws \Exception
      */
-    protected static function createSeasonsStructure(string $directory, array $imdbData){
+    protected static function createSeasonsStructure(string $directory, array $imdbData): void {
         foreach($imdbData['seasons'] as $season => $episodes) {
             $seasonPath = $directory."/".$imdbData['imdb_id'].":".$season;
             $season = [

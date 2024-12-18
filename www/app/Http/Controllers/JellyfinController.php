@@ -34,6 +34,12 @@ class JellyfinController extends Controller
         return response($response)->header('Content-Type', 'application/json');
     }
 
+    public function postItem(string $itemId, Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+        $api = new JellyfinApiManager();
+        $response = $api->postItem($itemId, $request->post());
+        return response($response)->header('Content-Type', 'application/json');
+    }
+
     public function deleteItem(string $itemId, Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
         $api = new JellyfinApiManager();
         $response = $api->getItems(['ids' => $itemId]);
@@ -148,6 +154,27 @@ class JellyfinController extends Controller
     public function getUsersItem(string $userId, string $itemId, Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
         $query = array_merge($request->query(), ['userId' => $userId]);
         $response = JellyfinManager::getItemById($itemId, $query);
+        return response($response)->header('Content-Type', 'application/json');
+    }
+
+    public function getUsersItemsLatest(string $userId, Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+        $query = $request->query();
+        $api = new JellyfinApiManager();
+        $response = $api->getUsersItemsLatest($userId, $query);
+
+        $virtualFolders = $api->getVirtualFolders();
+        if(isset($virtualFolders)){
+            foreach ($virtualFolders as $folder) {
+                $vFolder = collect(config('jellyfin.virtual_folders'))
+                    ->whereIn('path', array_values($folder['Locations']))->first();
+                if(isset($vFolder) && $query['ParentId'] == $folder['ItemId']){
+                    $typesMap = ['movies' => 'movie', 'tvshows' => 'series'];
+                    $type = $typesMap[$folder['CollectionType']];
+                    $response = JellyfinManager::getDashboardTopItems($type, $query);
+                }
+            }
+        }
+
         return response($response)->header('Content-Type', 'application/json');
     }
 

@@ -55,7 +55,13 @@ class Items extends Model
         if($withImdbData)
             $imdbData = $this->getImdbData();
 
-        $overview = "Click on the ♥ Heart icon to add this item to the library.";
+        $overview = "------------------------------\n\n";
+        $overview .= "⚠️ **How to watch this title**:\n";
+        $overview .= "- Click on the ♥ Heart icon to add this item to the library.\n";
+        $overview .= "- Make sure you have added at least one addon to the library.\n";
+        $overview .= "- Select one link from those available.\n";
+        $overview .= "- Enjoy.\n";
+        $overview .= "------------------------------\n\n";
 
         $outcome = \App\Services\Jellyfin\lib\Items::$CONFIG;
         $outcome['CommunityRating'] = @$imdbData['rating'];
@@ -71,27 +77,20 @@ class Items extends Model
         $outcome['ImageTags']['Primary'] = $this->item_image_md5;
         $outcome['Name'] = $this->item_title;
         $outcome['OriginalTitle'] = $this->item_original_title;
-        $outcome['Overview'] = $overview . "\n\n" . @$imdbData['plot'];
+        $outcome['Overview'] = $overview . @$imdbData['plot'];
         $outcome['ParentId'] = $this->item_md5;
         $outcome['ProviderIds']['Imdb'] = $this->item_imdb_id;
         $outcome['ServerId'] = $this->item_server_id;
         $outcome['SortName'] = $this->item_title;
         //$outcome['Type'] = $this->item_type == "tvSeries" ? 'Series' : 'Movie';
-        $outcome['Type'] = "Video";
+        $outcome['Type'] = "Unknown";
         $outcome['Path'] = null;
         $outcome['MediaStreams'] = null;
         $outcome['MediaSources'] = [];
         $outcome['VideoType'] = 'Unknown';
         $outcome['MediaType'] = 'Unknown';
         $outcome['LocationType'] = 'Remote';
-        $outcome['UserData'] = [
-            'PlaybackPositionTicks' => 0,
-            'PlayCount' => 0,
-            'IsFavorite' => isset($item->item_path),
-            'Played' => false,
-            'Key' => null,
-            'ItemId' => '00000000000000000000000000000000'
-        ];
+        $outcome['UserData'] = [];
         return $outcome;
     }
 

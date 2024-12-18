@@ -73,6 +73,7 @@ $app->configure('logging');
 $app->configure('jellyfin');
 $app->configure('imdb');
 $app->configure('torrent');
+$app->configure('cinemeta');
 
 /*
 |--------------------------------------------------------------------------
