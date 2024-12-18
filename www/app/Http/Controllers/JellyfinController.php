@@ -160,6 +160,7 @@ class JellyfinController extends Controller
     public function getUsersItemsLatest(string $userId, Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
         $query = $request->query();
         $api = new JellyfinApiManager();
+        $api->setAuthenticationByApiKey();
         $response = $api->getUsersItemsLatest($userId, $query);
 
         $virtualFolders = $api->getVirtualFolders();
@@ -184,6 +185,7 @@ class JellyfinController extends Controller
 
     public function postUsersItemFavorite(string $userId, string $itemId, Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
         $api = new JellyfinApiManager();
+        $api->setAuthenticationByApiKey();
         $item = Items::where('item_md5', $itemId)->first();
         if(isset($item)){
             $item->saveItemToLibrary();

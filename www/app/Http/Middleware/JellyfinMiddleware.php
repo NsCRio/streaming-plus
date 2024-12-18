@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Services\Jellyfin\JellyfinApiManager;
+use App\Services\Jellyfin\JellyfinManager;
 use Carbon\Carbon;
 use Closure;
 use Illuminate\Http\Request;
@@ -27,7 +28,7 @@ class JellyfinMiddleware
             $api = new JellyfinApiManager($header);
             $apiKey = $api->createApiKeyIfNotExists('streaming-plus');
             if(isset($apiKey['AccessToken']))
-                Cache::put('jellyfin-api-key', $apiKey['AccessToken']);
+                JellyfinManager::saveApiKey($apiKey['AccessToken']);
         }
 
         putenv('JELLYFIN_URL='.env('HTTP_HOST'));

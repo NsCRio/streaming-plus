@@ -175,6 +175,19 @@ class JellyfinManager
         return null;
     }
 
+
+    public static function saveApiKey($apiKey){
+        $path = config('jellyfin.api_key_path');
+        file_put_contents($path, $apiKey);
+        return $path;
+    }
+
+    public static function getApiKey(){
+        $path = config('jellyfin.api_key_path');
+        return @file_get_contents($path) ?? null;
+    }
+
+
     /**
      * @throws \Exception
      */

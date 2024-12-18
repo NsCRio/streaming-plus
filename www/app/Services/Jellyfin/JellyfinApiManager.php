@@ -291,6 +291,22 @@ class JellyfinApiManager extends AbstractApiManager
         return $response ?? [];
     }
 
+    public function setAuthenticationByApiKey(){
+        $apiKey = JellyfinManager::getApiKey();
+        if(isset($apiKey)){
+            if(isset($this->headers['Authorization']))
+                unset($this->headers['Authorization']);
+            if(isset($this->headers['authorization']))
+                unset($this->headers['authorization']);
+            if(isset($this->headers['x-emby-token']))
+                unset($this->headers['x-emby-token']);
+            if(isset($this->headers['X-Emby-Token']))
+                unset($this->headers['X-Emby-Token']);
+
+            $this->headers['X-Emby-Token'] = $apiKey;
+        }
+    }
+
     protected function apiCall(string $uri, string $method = 'GET', array $data = [], array $headers = [], $returnBody = false) : array|null {
         $default_headers = [
             'Content-Type' => 'application/json'
@@ -300,10 +316,6 @@ class JellyfinApiManager extends AbstractApiManager
             $default_headers = $this->headers;
 
         $headers = array_merge($default_headers, $headers);
-        if(Cache::get('jellyfin-api-key', false) && !isset($headers['authorization']) && !isset($headers['x-emby-token'])
-            && !isset($headers['Authorization']) && !isset($headers['X-Emby-Token']))
-            $headers['x-emby-token'] = Cache::get('jellyfin-api-key');
-
         return parent::apiCall($uri, $method, $data, $headers);
     }
 

@@ -64,6 +64,7 @@ class AddonsApiManager extends AbstractApiManager
     public static function getAddons(){
         $addons = [];
         $api = new JellyfinApiManager();
+        $api->setAuthenticationByApiKey();
         $repositories = array_filter($api->getPackagesRepositories() ?? [], function($repo){
             return $repo['Name'] !== "Jellyfin Stable";
         }) ?? [];

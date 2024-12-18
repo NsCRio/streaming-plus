@@ -3,6 +3,7 @@
 return [
     'url' => 'http://localhost:8097',
     'external_url' => 'http://localhost:8096',
+    'api_key_path' => sp_data_path('app/api.key'),
     'movies_path' => sp_data_path('library/movies'),
     'series_path' => sp_data_path('library/tvSeries'),
     'virtual_folders' => [
