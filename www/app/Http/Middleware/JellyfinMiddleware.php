@@ -31,8 +31,6 @@ class JellyfinMiddleware
                 JellyfinManager::saveApiKey($apiKey['AccessToken']);
         }
 
-        putenv('JELLYFIN_URL='.env('HTTP_HOST'));
-
         return $next($request);
     }
 }
