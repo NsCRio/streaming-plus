@@ -14,11 +14,11 @@ class StreamsManager
 {
 
     public static function searchStreamsByItemId(string $itemId = null, string $mediaSourceId = null){
-        //return Cache::remember('streams_item_'.md5($itemId.$mediaSourceId), Carbon::now()->addMinutes(10), function() use ($itemId, $mediaSourceId) {
+        return Cache::remember('streams_item_'.md5($itemId.$mediaSourceId), Carbon::now()->addMinutes(10), function() use ($itemId, $mediaSourceId) {
             $mediaSources = [];
             try {
                 $item = JellyfinManager::getItemDetailById($itemId);
-                if (isset($item)) {
+                if (!empty($item)) {
                     $mediaSources = @$item['MediaSources'] ?? [];
                     $streams = self::getStreams($item['imdbId'], $mediaSourceId);
 
@@ -67,11 +67,11 @@ class StreamsManager
 
             ksort($mediaSources);
             return array_values($mediaSources);
-        //});
+        });
     }
 
     public static function searchStreamsFromAddons(string $imdbId, string $itemId = null){
-        //return Cache::remember('streams_imdb_'.md5($imdbId.$itemId), Carbon::now()->addMinutes(10), function() use ($imdbId, $itemId) {
+        return Cache::remember('streams_imdb_'.md5($imdbId.$itemId), Carbon::now()->addMinutes(10), function() use ($imdbId, $itemId) {
             $streams = [];
 
             try {
@@ -94,7 +94,7 @@ class StreamsManager
             }catch (\Exception $e){}
 
             return $streams;
-        //});
+        });
     }
 
 

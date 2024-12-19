@@ -37,14 +37,19 @@ class JellyfinApiManager extends AbstractApiManager
         $keys = $this->getApiKeys();
         if(!empty($keys['Items'])){
             $keys = array_filter(array_map(function($key) use($apiKeyName){
-                return $key['AppName'] == $apiKeyName ? $key : null;
+                return trim($key['AppName']) == trim($apiKeyName) ? $key : null;
             }, $keys['Items']));
-            if(!empty($keys))
+            if(count($keys) > 0)
                 return $keys[array_key_first($keys)];
         }
         $this->createApiKey($apiKeyName);
         $keys = $this->getApiKeys();
         return collect($keys)->where('AppName', $apiKeyName)->first();
+    }
+
+    public function testApiKey(){
+        $this->setAuthenticationByApiKey();
+        return !empty($this->getUsers());
     }
 
     public function getItemFromQuery(string $itemId, array $query = []): ?array {
@@ -273,6 +278,10 @@ class JellyfinApiManager extends AbstractApiManager
 
     public function getUsers(){
         return $this->apiCall('/Users', 'GET');
+    }
+
+    public function getAuthUser(){
+        return $this->apiCall('/Users/Me', 'GET');
     }
 
     public function getStartupUser(){

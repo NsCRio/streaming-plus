@@ -24,11 +24,15 @@ class JellyfinMiddleware
     {
         $header = $request->header();
 
+        //Api key creation
         if(isset($header['authorization'])){
-            $api = new JellyfinApiManager($header);
-            $apiKey = $api->createApiKeyIfNotExists('streaming-plus');
-            if(isset($apiKey['AccessToken']))
-                JellyfinManager::saveApiKey($apiKey['AccessToken']);
+            if(!file_exists(config('jellyfin.api_key_path'))) {
+                file_put_contents(config('jellyfin.api_key_path'), '');
+                $api = new JellyfinApiManager($header);
+                $apiKey = $api->createApiKeyIfNotExists('streaming-plus');
+                if (isset($apiKey['AccessToken']))
+                    JellyfinManager::saveApiKey($apiKey['AccessToken']);
+            }
         }
 
         return $next($request);

@@ -8,6 +8,7 @@ use App\Services\Jellyfin\JellyfinApiManager;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 
 class UpdateLibraryCommand extends Command
 {
@@ -50,33 +51,45 @@ class UpdateLibraryCommand extends Command
         ini_set('memory_limit', '4000M');
 
         Artisan::call('cache:clear');
+        Log::info('[Library Update] cache cleared.');
 
         //Elimino gli items che esistono da più di 5 giorni e non sono mai stati aperti
         $items = Items::query()->whereNull('item_jellyfin_id')
             ->where('created_at', '<=', Carbon::now()->subDays(config('jellyfin.delete_unused_after')))->get();
+        $count = $items->count();
         foreach ($items as $item) {
            if(isset($item->item_path))
                $item->removeFromLibrary();
            $item->delete();
         }
+        Log::info('[Library Update] '.$count.' unused items removed.');
 
         //Faccio l'aggiornamento delle serie tv per vedere se ci sono nuovi episodi
-        $items = Items::query()->where('item_type','tvSeries')
-            ->whereNotNull('item_jellyfin_id')
+        $items = Items::query()->where('item_type','tvSeries')->whereNotNull('item_jellyfin_id')
             ->where('updated_at', '<=', Carbon::now()->subHours(config('jellyfin.update_series_after')))->get();
+        $count = $items->count();
         foreach ($items as $item) {
             $imdbData = $item->getImdbData();
-            if(!isset($imdbData['enddate'])) //Solo se non è conclusa
+            if(!isset($imdbData['enddate'])) { //Solo se non è conclusa
                 $item->updateItemToLibrary();
-            sleep(1);
+                sleep(1);
+            }
         }
+        Log::info('[Library Update] '.$count.' tv series updated.');
 
         //Elimino le stream create da più di tot ore
         Streams::query()->where('updated_at', '<=', Carbon::now()->subHours(config('jellyfin.delete_streams_after')))->delete();
+        Log::info('[Library Update] old streams deleted.');
 
-        //Avvio la scansione di jellyfin
+
         $api = new JellyfinApiManager();
-        $api->startLibraryScan();
+        //Controllo se funziona ancora l'api key
+        if($api->testApiKey()){
+            $api->setAuthenticationByApiKey();
+            $api->startLibraryScan();
+        }else{
+            unlink(config('jellyfin.api_key_path'));
+        }
 
         $this->info("end. (".number_format(microtime(true) - $start, 2)."s)\n");
 
