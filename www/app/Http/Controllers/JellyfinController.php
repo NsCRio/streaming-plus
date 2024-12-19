@@ -79,7 +79,7 @@ class JellyfinController extends Controller
             $itemData = JellyfinManager::decodeItemId($data['MediaSourceId']);
 
         $item = JellyfinManager::getItemDetailById($itemData['itemId'], $request->query());
-        if (!empty($item) && str_ends_with($item['Path'], '.strm')) {
+        if (!empty($item) && isset($item['Path']) && str_ends_with($item['Path'], '.strm')) {
             $mediaSource = $item['MediaSources'][array_key_first($item['MediaSources'])];
             if ($mediaSource['Name'] == $item['imdbId']){
                 $source = '/stream?imdbId=' . $item['imdbId'];
