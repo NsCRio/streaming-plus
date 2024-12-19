@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('stream_url')->nullable();
             $table->string('stream_host')->nullable();
             $table->string('stream_server_id')->nullable();
+            $table->timestamp('stream_watched_at')->nullable();
             $table->timestamps();
         });
     }

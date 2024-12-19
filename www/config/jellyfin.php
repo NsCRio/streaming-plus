@@ -18,6 +18,16 @@ return [
             'type' => 'tvshows',
         ]
     ],
-    'delete_unused_after' => 5, //days
+    'delete_unused_items_after' => 5, //days
     'update_series_after' => 12, //hours
+    'delete_streams_after' => 3, //hours
+    'supported_extensions' => [
+        'mp4',
+        'mkv',
+        'webm',
+        'ts',
+        'm2t',
+        'm3u',
+        'm3u8'
+    ]
 ];

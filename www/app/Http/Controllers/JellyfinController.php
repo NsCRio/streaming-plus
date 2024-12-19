@@ -78,23 +78,22 @@ class JellyfinController extends Controller
         if(isset($data['MediaSourceId']))
             $itemData = JellyfinManager::decodeItemId($data['MediaSourceId']);
 
-
-        $item = JellyfinManager::getItemDetailById($itemData['itemId']);
-        if (str_ends_with($item['Path'], '.strm')) {
+        $item = JellyfinManager::getItemDetailById($itemData['itemId'], $request->query());
+        if (!empty($item) && str_ends_with($item['Path'], '.strm')) {
             $mediaSource = $item['MediaSources'][array_key_first($item['MediaSources'])];
+            if ($mediaSource['Name'] == $item['imdbId']){
+                $source = '/stream?imdbId=' . $item['imdbId'];
 
-            $source = '/stream?imdbId=' . $item['imdbId'];
-            $currentSource = file_get_contents($item['Path']);
-            if(@$data['MediaSourceId'] !== $itemData['mediaSourceId'] || $mediaSource['Protocol'] == "File" ||
-                !isset($currentSource) || !isset(parse_url($currentSource)['host']) || parse_url($currentSource)['host'] != parse_url(app_url())['host']){
+                $currentSource = @parse_url(@file_get_contents(@$item['Path']));
+                if(isset($currentSource['path']) && isset($currentSource['query']))
+                    $source = $currentSource['path'].'?'.$currentSource['query'];
 
                 if (isset($itemData['streamId']))
                     $source = '/stream?streamId=' . $itemData['streamId'];
-                if ($mediaSource['Name'] == $item['imdbId'])
-                    file_put_contents($item['Path'], app_url($source));
-            }
 
-            $data['MediaSourceId'] = $itemData['itemId'];
+                file_put_contents($item['Path'], app_url($source));
+            }
+            $data['MediaSourceId'] = $item['Id'];
             $data['AllowVideoStreamCopy'] = true;
             $data['EnableDirectPlay'] = true;
             $data['EnableDirectStream'] = true;

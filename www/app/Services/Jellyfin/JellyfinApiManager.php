@@ -48,8 +48,9 @@ class JellyfinApiManager extends AbstractApiManager
     }
 
     public function getItemFromQuery(string $itemId, array $query = []): ?array {
-        if (isset($query['userId'])) {
-            $response = $this->getUsersItem($query['userId'], $itemId, $query);
+        if (isset($query['userId']) || isset($query['UserId'])) {
+            $userId = @$query['userId'] ?? @$query['UserId'];
+            $response = $this->getUsersItem($userId, $itemId, $query);
         } else {
             $response = $this->getItem($itemId, $query);
         }

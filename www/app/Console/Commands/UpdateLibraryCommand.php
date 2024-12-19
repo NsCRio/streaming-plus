@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Items;
+use App\Models\Streams;
 use App\Services\Jellyfin\JellyfinApiManager;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -69,6 +70,9 @@ class UpdateLibraryCommand extends Command
                 $item->updateItemToLibrary();
             sleep(1);
         }
+
+        //Elimino le stream create da più di tot ore
+        Streams::query()->where('updated_at', '<=', Carbon::now()->subHours(config('jellyfin.delete_streams_after')))->delete();
 
         //Avvio la scansione di jellyfin
         $api = new JellyfinApiManager();

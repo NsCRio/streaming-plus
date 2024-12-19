@@ -19,11 +19,36 @@ if (!function_exists('sp_data_path')) {
     }
 }
 
+if (!function_exists('ping')) {
+    function ping($url){
+        $response = false;
+        try {
+            $url = parse_url($url);
+            $host = @$url['host'];
+            $port = @$url['port'] ?? 80;
+            if (isset($host, $port)) {
+                $waitTimeoutInSeconds = 1;
+                if ($fp = fsockopen($host, $port, $errCode, $errStr, $waitTimeoutInSeconds))
+                    $response = true;
+                fclose($fp);
+            }
+        }catch (\Exception $e){}
+        return $response;
+    }
+}
+
+
 if (!function_exists('app_url')) {
     function app_url($path = "", array $query = []){
         $url = "http://".env('HTTP_HOST');
-        if(!isset($url))
+        if(!ping($url)){
+            $uInfo = parse_url($url);
+            if(isset($uInfo['scheme'], $uInfo['host']))
+                $url = $uInfo['scheme'].'://'.$uInfo['host'];
+        }
+        if(!ping($url))
             $url = config('app.url');
+
         if(!empty($path)) {
             $path = !str_starts_with($path, '/') ? '/' . $path : $path;
             $path .= !empty($query) ? '?' . http_build_query($query, '', '&') : '';
