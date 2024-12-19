@@ -80,23 +80,25 @@ class JellyfinController extends Controller
 
         $item = JellyfinManager::getItemDetailById($itemData['itemId'], $request->query());
         if (!empty($item) && isset($item['Path']) && str_ends_with($item['Path'], '.strm')) {
-            $mediaSource = $item['MediaSources'][array_key_first($item['MediaSources'])];
-            if ($mediaSource['Name'] == $item['imdbId']){
-                $source = '/stream?imdbId=' . $item['imdbId'];
+            if(!empty($item['MediaSources'])) {
+                $mediaSource = $item['MediaSources'][array_key_first($item['MediaSources'])];
+                if ($mediaSource['Name'] == $item['imdbId']) {
+                    $source = '/stream?imdbId=' . $item['imdbId'];
 
-                $currentSource = @parse_url(@file_get_contents(@$item['Path']));
-                if(isset($currentSource['path']) && isset($currentSource['query']))
-                    $source = $currentSource['path'].'?'.$currentSource['query'];
+                    $currentSource = @parse_url(@file_get_contents(@$item['Path']));
+                    if (isset($currentSource['path']) && isset($currentSource['query']))
+                        $source = $currentSource['path'] . '?' . $currentSource['query'];
 
-                if (isset($itemData['streamId']))
-                    $source = '/stream?streamId=' . $itemData['streamId'];
+                    if (isset($itemData['streamId']))
+                        $source = '/stream?streamId=' . $itemData['streamId'];
 
-                file_put_contents($item['Path'], app_url($source));
+                    file_put_contents($item['Path'], app_url($source));
+                }
+                $data['MediaSourceId'] = $item['Id'];
+                $data['AllowVideoStreamCopy'] = true;
+                $data['EnableDirectPlay'] = true;
+                $data['EnableDirectStream'] = true;
             }
-            $data['MediaSourceId'] = $item['Id'];
-            $data['AllowVideoStreamCopy'] = true;
-            $data['EnableDirectPlay'] = true;
-            $data['EnableDirectStream'] = true;
         }
 
         $api = new JellyfinApiManager();
