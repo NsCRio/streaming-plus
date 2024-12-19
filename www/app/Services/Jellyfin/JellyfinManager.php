@@ -65,8 +65,8 @@ class JellyfinManager
      * @return array
      */
 
-    public static function getDashboardTopItems(string $type = "movie", array $query = [], int $limit = 10): array {
-        //return Cache::remember('jellyfin_dashboard_items_'.md5($type.$limit), Carbon::now()->addHours(2), function () use ($type, $limit) {
+    public static function getDashboardTopItems(string $type = "movie", array $query = [], int $limit = 20): array {
+        return Cache::remember('jellyfin_dashboard_items_'.md5($type.$limit), Carbon::now()->addHour(), function () use ($type, $limit) {
             $api = new AddonsApiManager(config('cinemeta.url'));
             $catalog = $api->getCatalog($type, 'top');
             if($limit > 0)
@@ -96,7 +96,7 @@ class JellyfinManager
                 $outcome[$item->item_md5] = $item->getJellyfinListItem($resultType);
             }
             return array_values($outcome);
-        //});
+        });
     }
 
     /**
