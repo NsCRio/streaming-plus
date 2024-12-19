@@ -69,24 +69,26 @@ class AddonsApiManager extends AbstractApiManager
             return $repo['Name'] !== "Jellyfin Stable";
         }) ?? [];
         foreach ($repositories as $repo) {
-            $response = self::call($repo['Url']);
-            if(isset($response['id']) && isset($response['types'])){
-                $url = parse_url($repo['Url']);
-                $config = str_replace('/manifest.json', '', substr($url['path'], 1));
-                $repository = [
-                    'id' => md5($repo['Url']),
-                    'name' => $repo['Name'],
-                    'url' => $url['scheme'].'://'.$url['host'],
-                    'endpoint' => $url['scheme'].'://'.$url['host'].'/'.$config,
-                    'host' => $url['host'],
-                    'config' => $config,
-                    'manifest' => $repo['Url']
-                ];
-                $addon = [
-                    'repository' => $repository,
-                    'manifest' => $response,
-                ];
-                $addons[] = $addon;
+            if(ping($repo['Url'])) {
+                $response = self::call($repo['Url']);
+                if (isset($response['id']) && isset($response['types'])) {
+                    $url = parse_url($repo['Url']);
+                    $config = str_replace('/manifest.json', '', substr($url['path'], 1));
+                    $repository = [
+                        'id' => md5($repo['Url']),
+                        'name' => $repo['Name'],
+                        'url' => $url['scheme'] . '://' . $url['host'],
+                        'endpoint' => $url['scheme'] . '://' . $url['host'] . '/' . $config,
+                        'host' => $url['host'],
+                        'config' => $config,
+                        'manifest' => $repo['Url']
+                    ];
+                    $addon = [
+                        'repository' => $repository,
+                        'manifest' => $response,
+                    ];
+                    $addons[] = $addon;
+                }
             }
         }
         return $addons;
