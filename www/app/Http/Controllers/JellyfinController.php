@@ -255,6 +255,37 @@ class JellyfinController extends Controller
      * Other Routes
      */
 
+    public function getSystemInfo(Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+        $api = new JellyfinApiManager();
+        $response = $api->getSystemInfo();
+        return response($response)->header('Content-Type', 'application/json');
+    }
+
+    public function getSystemInfoPublic(Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+        $api = new JellyfinApiManager();
+        $response = $api->getSystemInfoPublic();
+        $response['LocalAddress'] = config('jellyfin.external_url');
+        $response['ProductName'] = config('app.name')." Server";
+        return response($response)->header('Content-Type', 'application/json');
+    }
+
+    public function getSystemConfigurationNetwork(Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+        $api = new JellyfinApiManager();
+        $response = $api->getSystemConfiguration('network');
+        $response['InternalHttpPort'] = 8096;
+        $response['InternalHttpsPort'] = 8920;
+        $response['PublicHttpPort'] = 8096;
+        $response['PublicHttpsPort'] = 8920;
+        return response($response)->header('Content-Type', 'application/json');
+    }
+
+    public function postSystemConfigurationNetwork(Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+        $api = new JellyfinApiManager();
+        $data = $api->getSystemConfiguration('network');
+        $response = $api->postSystemConfiguration('network', $data);
+        return response($response)->header('Content-Type', 'application/json');
+    }
+
     public function getStartupUser(Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
         $api = new JellyfinApiManager();
         $info = $api->getSystemInfo();

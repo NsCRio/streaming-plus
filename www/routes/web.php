@@ -27,6 +27,13 @@ $router->get('/jellyfin', function () use ($router) {
 $router->get('/stream', ['as'=> 'stream', 'uses'=>'StreamController@getStream']);
 
 //Jellyfin Proxed Routes
+$router->get('/System/Info',                                    ['as'=> 'jellyfin.system.info', 'uses'=>'JellyfinController@getSystemInfoPublic']);
+$router->get('/System/Info/Public',                             ['as'=> 'jellyfin.system.info.public', 'uses'=>'JellyfinController@getSystemInfoPublic']);
+$router->get('/system/info/public',                             ['as'=> 'jellyfin.system.info.public2', 'uses'=>'JellyfinController@getSystemInfoPublic']);
+
+$router->get('/System/Configuration/network',                   ['as'=> 'jellyfin.system.configuration.network', 'uses'=>'JellyfinController@getSystemConfigurationNetwork']);
+$router->post('/System/Configuration/network',                  ['as'=> 'jellyfin.system.configuration.network.post', 'uses'=>'JellyfinController@postSystemConfigurationNetwork']);
+
 $router->get('/Startup/User',                                   ['as'=> 'jellyfin.startup_user', 'uses'=>'JellyfinController@getStartupUser']);
 $router->post('/Startup/User',                                  ['as'=> 'jellyfin.startup_user', 'uses'=>'JellyfinController@postStartupUser']);
 

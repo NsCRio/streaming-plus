@@ -163,6 +163,18 @@ class JellyfinApiManager extends AbstractApiManager
         return $this->apiCall('/System/Info');
     }
 
+    public function getSystemInfoPublic(){
+        return $this->apiCall('/System/Info/Public');
+    }
+
+    public function getSystemConfiguration(string $key){
+        return $this->apiCall('/System/Configuration/'.$key);
+    }
+
+    public function postSystemConfiguration(string $key, array $data = []){
+        return $this->apiCall('/System/Configuration/'.$key, 'POST_BODY', $data);
+    }
+
     public function getBranding(){
         return $this->apiCall('/Branding/Configuration');
     }

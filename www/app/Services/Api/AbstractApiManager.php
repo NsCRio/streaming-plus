@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Log;
 
 class AbstractApiManager
 {
-    protected $endpoint, $default_headers = [];
+    protected $endpoint, $timeout = 10, $connect_timeout = 5, $default_headers = [];
 
     public static function call(string $uri, string $method = 'GET', array $data = [], array $headers = [], $returnBody = false) : string|array|null {
         $api = new self();
@@ -20,7 +20,8 @@ class AbstractApiManager
             $uri = !str_starts_with('/', $uri) ? $uri : '/' . $uri;
             $headers = array_merge($this->default_headers, $headers);
             $options = [
-                'connect_timeout' => 120,
+                'timeout' => $this->timeout,
+                'connect_timeout' => $this->connect_timeout,
                 'headers' => $headers,
             ];
             if($method == 'POST' || $method == 'PUT') {
@@ -35,7 +36,6 @@ class AbstractApiManager
                 $uri = sprintf("%s?%s", $uri, http_build_query($data));
             }
             $url = isset($this->endpoint) ? $this->endpoint . $uri : $uri;
-            //dd($method, $url, $options);
             $r = $cli->request($method, $url, $options);
             $body = $r->getBody();
             if($returnBody) {
