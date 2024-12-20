@@ -27,6 +27,8 @@ class StreamController extends BaseController
             if (!empty($streams)) {
                 $addonsIds = AddonsApiManager::getActiveAddonsIds();
                 $streams->whereIn('stream_addon_id', $addonsIds);
+                $streams->sortBy('stream_protocol');
+                $streams->sortBy('stream_title', SORT_NATURAL);
                 $streams->sortBy('updated_at', SORT_DESC);
                 $stream = $streams->first();
             }

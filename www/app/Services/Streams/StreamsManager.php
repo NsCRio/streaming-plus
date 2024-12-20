@@ -71,6 +71,7 @@ class StreamsManager
             }
         }catch (\Exception $e){}
 
+        $mediaSources = collect($mediaSources)->sortBy('UrlProtocol')->sortBy('Name', SORT_NATURAL)->all();
         $mediaSources = array_values($mediaSources);
         if(!empty($mediaSources))
             Cache::put('streams_item_'.md5($itemId.$mediaSourceId.json_encode($addonIds)), $mediaSources, Carbon::now()->addMinutes(10));
@@ -133,14 +134,10 @@ class StreamsManager
     }
 
     protected static function getStreamFromSource(array $source, array $addon = [], string $imdbId = null, string $mediaSourceId = null){
-        if (isset($source['infoHash']) && isset($source['behaviorHints'])) {
-            if(isset($source['behaviorHints']['filename'])){
-                $file = pathinfo($source['behaviorHints']['filename']);
-                if(in_array(@$file['extension'], ['mkv', 'mp4'])){
-                    $source['url'] = urlencode("magnet:?xt=urn:btih:" . $source['infoHash']);
-                    $source['url'] .= '?file=' . urlencode($source['behaviorHints']['filename']);
-                }
-            }
+        if (isset($source['infoHash'])) {
+            $source['url'] = urlencode("magnet:?xt=urn:btih:" . $source['infoHash']);
+            if(isset($source['behaviorHints']['filename']))
+                $source['url'] .= '?file=' . urlencode($source['behaviorHints']['filename']);
         }
 
         if(isset($source['url'])) {
