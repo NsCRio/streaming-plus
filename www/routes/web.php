@@ -50,6 +50,7 @@ $router->get('/Items/{itemId}/Similar',                         ['as'=> 'jellyfi
 $router->get('/Items/{itemId}/PlaybackInfo',                    ['as'=> 'jellyfin.items.playback_info', 'uses'=>'JellyfinController@getItemsPlaybackInfo']);
 $router->post('/Items/{itemId}/PlaybackInfo',                   ['as'=> 'jellyfin.items.playback_info.post', 'uses'=>'JellyfinController@postItemsPlaybackInfo']);
 $router->get('/Items/{itemId}/Images/{imageId}',                ['as'=> 'jellyfin.items.images', 'uses'=>'JellyfinController@getItemsImages']);
+$router->post('/Items/{itemId}/Images/{imageId}',               ['as'=> 'jellyfin.items.images.post', 'uses'=>'JellyfinController@postItemsImages']);
 
 $router->get('/Users/{userId}/Items',                           ['as'=> 'jellyfin.users.items', 'uses'=>'JellyfinController@getUsersItems']);
 $router->get('/Users/{userId}/Items/Latest',                    ['as'=> 'jellyfin.users.items.latest', 'uses'=>'JellyfinController@getUsersItemsLatest']);

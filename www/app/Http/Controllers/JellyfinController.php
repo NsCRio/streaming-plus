@@ -65,6 +65,12 @@ class JellyfinController extends Controller
         return response(@file_get_contents(jellyfin_url($request->path(), $request->query())), 200)->header('Content-Type', 'image/webp');
     }
 
+    public function postItemsImages(string $itemId, string $imageId, Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+        $api = new JellyfinApiManager();
+        $response = $api->setItemImage($itemId, $imageId, $request->getContent());
+        return response($response, 204)->header('Content-Type', 'application/json');
+    }
+
 
     public function getItemsPlaybackInfo(string $itemId, Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
         $api = new JellyfinApiManager();

@@ -14,7 +14,7 @@ class AbstractApiManager
         return $api->apiCall($uri, $method, $data, $headers, $returnBody);
     }
 
-    protected function apiCall(string $uri, string $method = 'GET', array $data = [], array $headers = [], $returnBody = false) : string|array|null {
+    protected function apiCall(string $uri, string $method = 'GET', array|string $data = [], array $headers = [], $returnBody = false) : string|array|null {
         try {
             $cli = new Client();
             $uri = !str_starts_with('/', $uri) ? $uri : '/' . $uri;
@@ -28,7 +28,11 @@ class AbstractApiManager
                 $options['form_params'] = $data;
             }elseif($method == 'POST_BODY') {
                 $method = 'POST';
-                $options['body'] = json_encode($data);
+                if(is_array($data)) {
+                    $options['body'] = json_encode($data);
+                }else{
+                    $options['body'] = $data;
+                }
             }elseif($method == 'POST_JSON') {
                 $method = 'POST';
                 $options['json'] = $data;

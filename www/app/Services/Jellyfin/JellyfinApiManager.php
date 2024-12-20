@@ -115,6 +115,10 @@ class JellyfinApiManager extends AbstractApiManager
         return $this->apiCall('/Users/'.$userId.'/Items', 'GET', $query);
     }
 
+    public function setItemImage(string $itemId, string $imageType, string $imageBinary){
+        return $this->apiCall('/Items/'.$itemId.'/Images/'.$imageType, 'POST_BODY', $imageBinary);
+    }
+
     public function setItemFavorite(string $itemId, string $userId){
         $query = ['userId' => $userId, 'spCall' => true];
         return $this->apiCall('/UserFavoriteItems/'.$itemId.'?'.http_build_query($query), 'POST_JSON', []);
@@ -330,7 +334,7 @@ class JellyfinApiManager extends AbstractApiManager
         }
     }
 
-    protected function apiCall(string $uri, string $method = 'GET', array $data = [], array $headers = [], $returnBody = false) : array|null {
+    protected function apiCall(string $uri, string $method = 'GET', array|string $data = [], array $headers = [], $returnBody = false) : array|null {
         $default_headers = [
             'Content-Type' => 'application/json'
         ];
