@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Log;
 
 class AbstractApiManager
 {
-    protected $endpoint, $timeout = 10, $connect_timeout = 5, $default_headers = [];
+    protected $endpoint, $timeout = 20, $connect_timeout = 10, $default_headers = [];
 
     public static function call(string $uri, string $method = 'GET', array $data = [], array $headers = [], $returnBody = false) : string|array|null {
         $api = new self();

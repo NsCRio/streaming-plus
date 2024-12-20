@@ -25,6 +25,8 @@ fatal() {
 info "-- Creating the necessary folders if they do not already exist"
 mkdir -p $SP_DATA_PATH/app
 mkdir -p $SP_DATA_PATH/app/sessions
+mkdir -p $SP_DATA_PATH/app/cache
+mkdir -p $SP_DATA_PATH/app/logs
 mkdir -p $SP_DATA_PATH/jellyfin
 mkdir -p $SP_DATA_PATH/jellyfin/cache
 mkdir -p $SP_DATA_PATH/jellyfin/config

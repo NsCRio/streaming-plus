@@ -17,6 +17,7 @@ class JellyfinApiManager extends AbstractApiManager
     protected $endpoint, $headers, $accessToken;
 
     public function __construct(array $headers = []){
+        $this->timeout = 30;
         $this->endpoint = config('jellyfin.url');
         $this->headers = request()->headers->all();
 

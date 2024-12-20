@@ -69,7 +69,7 @@ class AddonsApiManager extends AbstractApiManager
             return $repo['Name'] !== "Jellyfin Stable";
         }) ?? [];
         foreach ($repositories as $repo) {
-            if(ping($repo['Url'])) {
+            $addon = Cache::remember('addon_'.md5($repo['Url']), Carbon::now()->addHours(24), function () use ($repo) {
                 $response = self::call($repo['Url']);
                 if (isset($response['id']) && isset($response['types'])) {
                     $url = parse_url($repo['Url']);
@@ -83,15 +83,31 @@ class AddonsApiManager extends AbstractApiManager
                         'config' => $config,
                         'manifest' => $repo['Url']
                     ];
-                    $addon = [
+                    return [
                         'repository' => $repository,
                         'manifest' => $response,
                     ];
-                    $addons[] = $addon;
                 }
-            }
+                return null;
+            });
+            if(isset($addon))
+                $addons[] = $addon;
         }
         return $addons;
+    }
+
+    public static function getAddonById(string $id){
+        $addons = self::getAddons();
+        return !empty($addons) ? @array_values(array_filter(array_map(function ($addon) use($id){
+            return $addon['repository']['id'] == $id ? $addon : null;
+        }, $addons)))[0] : [];
+    }
+
+    public static function getActiveAddonsIds(): array {
+        $addons = self::getAddons();
+        return !empty($addons) ? array_values(array_filter(array_map(function ($addon) {
+            return $addon['repository']['id'];
+        }, $addons))) : [];
     }
 
     public function getManifest(){

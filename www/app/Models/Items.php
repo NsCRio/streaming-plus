@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\IMDB\IMDBApiManager;
 use App\Services\Items\ItemsManager;
+use App\Services\Jellyfin\JellyfinManager;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
@@ -13,6 +14,13 @@ class Items extends Model
     protected $table = 'items';
     protected $primaryKey = 'item_id';
     public $timestamps = true;
+
+
+    public function getJellyfinItem(){
+        if(isset($this->item_jellyfin_id))
+            return JellyfinManager::getItemDetailById($this->item_jellyfin_id);
+        return null;
+    }
 
     public function getImdbData(){
         $imdbData = [];

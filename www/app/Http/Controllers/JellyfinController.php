@@ -12,6 +12,7 @@ use App\Services\Jellyfin\JellyfinManager;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 
 class JellyfinController extends Controller
@@ -103,6 +104,12 @@ class JellyfinController extends Controller
 
         $api = new JellyfinApiManager();
         $response = $api->postItemPlaybackInfo($itemId, $request->query(), $data);
+
+        Log::info("Stream required: \n" . json_encode([
+            'url' => $request->fullUrl(),
+            'itemId' => $itemId,
+            'source' => @$source
+        ], JSON_PRETTY_PRINT));
 
         return response($response, 200)->header('Content-Type', 'application/json');
     }
