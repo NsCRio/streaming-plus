@@ -61,6 +61,7 @@ class Items extends Model
                     remove_dir(sp_data_path($this->item_path));
                     $this->item_path = null;
                     $this->item_jellyfin_id = null;
+                    $this->save();
                     return true;
                 }catch (\Exception $e){}
             }

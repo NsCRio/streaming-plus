@@ -70,6 +70,7 @@ $app->configure('app');
 $app->configure('database');
 $app->configure('cache');
 $app->configure('logging');
+$app->configure('tasks');
 $app->configure('jellyfin');
 $app->configure('imdb');
 $app->configure('torrent');

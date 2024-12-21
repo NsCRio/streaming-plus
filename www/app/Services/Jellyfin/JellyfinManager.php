@@ -66,7 +66,7 @@ class JellyfinManager
      */
 
     public static function getDashboardTopItems(string $type = "movie", array $query = [], int $limit = 20): array {
-        return Cache::remember('jellyfin_dashboard_items_'.md5($type.$limit), Carbon::now()->addHour(), function () use ($type, $limit) {
+        return Cache::remember('jellyfin_dashboard_items_'.$type, Carbon::now()->addHour(), function () use ($type, $limit) {
             $api = new AddonsApiManager(config('cinemeta.url'));
             $catalog = $api->getCatalog($type, 'top');
             if($limit > 0)

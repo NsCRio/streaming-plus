@@ -225,7 +225,7 @@ class IMDBApiManager extends AbstractApiManager
         return $this->apiKey;
     }
 
-    protected function apiCall(string $uri, string $method = 'GET', array $data = [], array $headers = [], $returnBody = false) : string|array|null {
+    protected function apiCall(string $uri, string $method = 'GET', string|array $data = [], array $headers = [], $returnBody = false) : string|array|null {
         $default_headers = [
             'referer' => config('imdb.url').'/',
             'user-agent' => $this->getRandomAgent(),

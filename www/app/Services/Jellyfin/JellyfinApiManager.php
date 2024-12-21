@@ -34,6 +34,10 @@ class JellyfinApiManager extends AbstractApiManager
         return $this->apiCall('/Auth/Keys?'.http_build_query($query), 'POST');
     }
 
+    public function deleteApiKey(string $apiKeyId){
+        return $this->apiCall('/Auth/Keys/'.$apiKeyId, 'DELETE');
+    }
+
     public function createApiKeyIfNotExists(string $apiKeyName){
         $keys = $this->getApiKeys();
         if(!empty($keys['Items'])){
@@ -159,6 +163,18 @@ class JellyfinApiManager extends AbstractApiManager
 
     public function getPackagesRepositories(){
         return $this->apiCall('/Repositories');
+    }
+
+    public function getScheduledTasks(){
+        return $this->apiCall('/ScheduledTasks');
+    }
+
+    public function getScheduledTask(string $taskId){
+        return $this->apiCall('/ScheduledTasks/'.$taskId);
+    }
+
+    public function postScheduledTaskRunning(string $taskId){
+        return $this->apiCall('/ScheduledTasks/Running/'.$taskId, 'POST');
     }
 
     public function getConfiguration(){

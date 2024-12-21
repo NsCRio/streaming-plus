@@ -9,6 +9,7 @@ use App\Services\Addons\AddonsApiManager;
 use App\Services\Items\ItemsManager;
 use App\Services\Jellyfin\JellyfinApiManager;
 use App\Services\Jellyfin\JellyfinManager;
+use App\Services\Tasks\TaskManager;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -49,6 +50,7 @@ class JellyfinController extends Controller
                 $item = Items::query()->where('item_jellyfin_id', $item['Id'])->first();
                 $item->removeFromLibrary();
                 $api->startLibraryScan();
+                Cache::flush();
                 sleep(10);
             }
         }
@@ -265,6 +267,69 @@ class JellyfinController extends Controller
     }
 
 
+    /**
+     * Auth Keys
+     */
+
+    public function getAuthKeys(Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+        $api = new JellyfinApiManager();
+        $response = $api->getApiKeys();
+        $response['Items'] = array_filter(array_map(function ($item) {
+            return $item['AppName'] !== config('app.code_name') ? $item : null;
+        }, $response['Items']));
+        return response($response)->header('Content-Type', 'application/json');
+    }
+
+    public function postAuthKeys(Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+        $api = new JellyfinApiManager();
+        $response = [];
+        if($request->get('App') !== config('app.code_name'))
+            $response = $api->createApiKey($request->get('App'));
+        return response($response)->header('Content-Type', 'application/json');
+    }
+
+    public function deleteAuthKey(string $accessToken, Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+        $api = new JellyfinApiManager();
+        $apiKey = collect(@$api->getApiKeys()['Items'])->where('AccessToken', $accessToken)->first();
+        $response = [];
+        if(isset($apiKey) && $apiKey['AppName'] !== config('app.code_name'))
+            $response = $api->deleteApiKey($accessToken);
+        return response($response)->header('Content-Type', 'application/json');
+    }
+
+    /**
+     * Schedule task route
+     */
+
+    public function getScheduledTasks(Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+        $api = new JellyfinApiManager();
+        $response = $api->getScheduledTasks();
+
+        $tasks = TaskManager::getTaskList();
+        $response = array_merge($response, array_values($tasks));
+
+        return response($response)->header('Content-Type', 'application/json');
+    }
+
+    public function getScheduledTask(string $taskId, Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+        $api = new JellyfinApiManager();
+        $response = $api->getScheduledTask($taskId);
+        return response($response)->header('Content-Type', 'application/json');
+    }
+
+    public function postScheduledTaskRunning(string $taskId, Request $request): \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory {
+        $api = new JellyfinApiManager();
+
+        $task = new TaskManager($taskId);
+        if($task->exists()){
+            $response = $task->executeTask();
+        }else{
+            $response = $api->postScheduledTaskRunning($taskId);
+        }
+
+        return response($response)->header('Content-Type', 'application/json');
+    }
+
     /*
      * Other Routes
      */
@@ -279,7 +344,6 @@ class JellyfinController extends Controller
         $api = new JellyfinApiManager();
         $response = $api->getSystemInfoPublic();
         $response['LocalAddress'] = config('jellyfin.external_url');
-        $response['ProductName'] = config('app.name')." Server";
         return response($response)->header('Content-Type', 'application/json');
     }
 

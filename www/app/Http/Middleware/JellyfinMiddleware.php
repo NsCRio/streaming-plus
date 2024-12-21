@@ -27,11 +27,15 @@ class JellyfinMiddleware
         //Api key creation
         if(isset($header['authorization'])){
             if(!file_exists(config('jellyfin.api_key_path'))) {
-                file_put_contents(config('jellyfin.api_key_path'), '');
-                $api = new JellyfinApiManager($header);
-                $apiKey = $api->createApiKeyIfNotExists('streaming-plus');
-                if (isset($apiKey['AccessToken']))
-                    JellyfinManager::saveApiKey($apiKey['AccessToken']);
+                $hasCreation = Cache::has('api_key_creation');
+                if(!$hasCreation) {
+                    Cache::put('api_key_creation', true);
+                    $api = new JellyfinApiManager($header);
+                    $apiKey = $api->createApiKeyIfNotExists(config('app.code_name'));
+                    if (isset($apiKey['AccessToken']))
+                        JellyfinManager::saveApiKey($apiKey['AccessToken']);
+                    Cache::forget('api_key_creation');
+                }
             }
         }
 

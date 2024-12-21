@@ -6,6 +6,7 @@
 
 return [
     'name' => 'Streaming Plus',
+    'code_name' => 'streaming-plus',
     'env' => 'local',
     'debug' => (bool) env('SP_APP_DEBUG', true),
     'url' => 'http://localhost:8095',

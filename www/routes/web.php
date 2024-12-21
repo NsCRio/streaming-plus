@@ -13,17 +13,6 @@
 |
 */
 
-$router->get('/', function () use ($router) {
-    #/jellyfin/web/#/wizardstart.html
-    dd(config('database.connections.mysql'));
-    return $router->app->version();
-});
-
-$router->get('/jellyfin', function () use ($router) {
-    dd('se sono qui non va bene');
-    return $router->app->version();
-});
-
 $router->get('/stream', ['as'=> 'stream', 'uses'=>'StreamController@getStream']);
 
 //Jellyfin Proxed Routes
@@ -58,6 +47,14 @@ $router->get('/Users/{userId}/Items/{itemId}',                  ['as'=> 'jellyfi
 $router->get('/Users/{userId}/Items/{itemId}/PlaybackInfo',     ['as'=> 'jellyfin.users.item.playback_info', 'uses'=>'JellyfinController@getUsersItemPlaybackInfo']);
 $router->post('/Users/{userId}/FavoriteItems/{itemId}',         ['as'=> 'jellyfin.users.item.favorite', 'uses'=>'JellyfinController@postUsersItemFavorite']);
 $router->delete('/Users/{userId}/FavoriteItems/{itemId}',       ['as'=> 'jellyfin.users.item.favorite.delete', 'uses'=>'JellyfinController@deleteUsersItemFavorite']);
+
+$router->get('/Auth/Keys',                                      ['as'=> 'jellyfin.auth.keys', 'uses'=>'JellyfinController@getAuthKeys']);
+$router->post('/Auth/Keys',                                     ['as'=> 'jellyfin.auth.keys.post', 'uses'=>'JellyfinController@postAuthKeys']);
+$router->delete('/Auth/Keys/{accessToken}',                     ['as'=> 'jellyfin.auth.keys.delete', 'uses'=>'JellyfinController@deleteAuthKey']);
+
+$router->get('/ScheduledTasks',                                 ['as'=> 'jellyfin.schedule_tasks', 'uses'=>'JellyfinController@getScheduledTasks']);
+$router->get('/ScheduledTasks/{taskId}',                        ['as'=> 'jellyfin.schedule_task', 'uses'=>'JellyfinController@getScheduledTask']);
+$router->post('/ScheduledTasks/Running/{taskId}',               ['as'=> 'jellyfin.schedule_task.running', 'uses'=>'JellyfinController@postScheduledTaskRunning']);
 
 $router->get('/Persons',                                        ['as'=> 'jellyfin.persons', 'uses'=>'JellyfinController@getPersons']);
 $router->get('/Artists',                                        ['as'=> 'jellyfin.artists', 'uses'=>'JellyfinController@getArtists']);
