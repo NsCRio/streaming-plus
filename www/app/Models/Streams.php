@@ -25,7 +25,9 @@ class Streams extends Model
         if(isset($item->item_path)){
             $path = $item->item_path.'/'.$this->stream_imdb_id.'.strm';
             if($item->item_type == "tvSeries"){
-                $path = $item->item_path.'/'.$this->stream_imdb_id.'/'.$this->stream_imdb_id.'.strm';
+                $imdbId = explode(':', $this->stream_imdb_id);
+                if(count($imdbId) > 1)
+                    $path = $item->item_path.'/'.$imdbId[0].':'.$imdbId[1].'/'.$this->stream_imdb_id.'.strm';
             }
             return sp_data_path($path);
         }
