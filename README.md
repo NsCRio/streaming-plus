@@ -1,24 +1,33 @@
-# streaming-plus [DEMO]
-Open Source Streaming Media Center
+# Streaming Plus (Beta)
+## Open Source Streaming Media Center
+### Jellyfin Media Center + Streamio Addons
 
-Jellyfin Media Center + Streamio Addons
+---
 
+## Installation
 
-Build
-docker-compose build --no-cache ${CONTAINERS}
+### With docker run
 
-Run + Build
-docker-compose up -d --build
+```
+docker run --name StreamingPlus -e PUID=1000 -e GUID=1000 -e TZ=Europe/Rome -v ./data:/data -p 8096:8096 -d nscrio/streaming-plus:latest
+```
 
-Run
-docker run --name StreamingPlus -e PUID=1000 -e GUID=1000 -e TIMEZONE=Europe/Rome -v ./data:/data -p 8096:8096 -d nscrio/streaming-plus:latest 
-docker-compose up -d
+### With docker compose 
 
-Shell
-docker-compose exec app bash
+```
+version: '3'
+services:
+  streaming_plus:
+    image: nscrio/streaming-plus:latest
+    container_name: streaming_plus
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - GUID=1000
+      - TZ=Europe/Rome
+    volumes:
+      - ./data:/data
+    ports:
+      - "8096:8096"
+```
 
-Down
-docker-compose down
-
-#Se da errore apt-get update
-docker-compose down -v --rmi all --remove-orphans
