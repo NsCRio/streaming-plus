@@ -29,7 +29,8 @@ class Streams extends Model
                 if(count($imdbId) > 1)
                     $path = $item->item_path.'/'.$imdbId[0].':'.$imdbId[1].'/'.$this->stream_imdb_id.'.strm';
             }
-            return sp_data_path($path);
+            if(file_exists(sp_data_path($path)))
+                return sp_data_path($path);
         }
         return null;
     }
