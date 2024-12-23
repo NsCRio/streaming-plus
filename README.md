@@ -1,4 +1,4 @@
-[![streaming-plus](https://raw.githubusercontent.com/NsCRio/streaming-plus/refs/heads/main/src/img/banner-light.png)
+![streaming-plus](https://raw.githubusercontent.com/NsCRio/streaming-plus/refs/heads/main/src/img/banner-light.png)
 # Streaming Plus (Beta)
 ## Open Source Streaming Media Center
 ### Jellyfin Media Center + Streamio Addons
