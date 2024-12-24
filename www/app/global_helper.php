@@ -66,6 +66,16 @@ if (!function_exists('sp_url')) {
     }
 }
 
+if (!function_exists('jellyfin_response')) {
+    function jellyfin_response($request){
+        $url = app_url($request->path());
+        $query = array_merge($request->query(), ['spCall' => true]);
+        return $url . '?' . http_build_query($query, '', '&');
+    }
+}
+
+
+
 if (!function_exists('jellyfin_url')) {
     function jellyfin_url($path = "", array $query = []){
         $url = config('jellyfin.url');

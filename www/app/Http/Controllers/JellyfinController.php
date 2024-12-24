@@ -70,7 +70,7 @@ class JellyfinController extends Controller
                 return response(@file_get_contents($item->item_image_url), 200)->header('Content-Type', 'image/jpeg');
             });
         }
-        return response(@file_get_contents(jellyfin_url($request->path(), $request->query())), 200)->header('Content-Type', 'image/webp');
+        return redirect(jellyfin_response($request));
     }
 
     public function postItemsImages(string $itemId, string $imageId, Request $request) {
@@ -81,6 +81,21 @@ class JellyfinController extends Controller
 
     public function getItemsPlaybackInfo(string $itemId, Request $request)  {
         $api = new JellyfinApiManager();
+        $item = JellyfinManager::getItemDetailById($itemId, $request->query());
+        if (!empty($item) && isset($item['Path']) && str_ends_with($item['Path'], '.strm')) {
+            if(!empty($item['MediaSources'])) {
+                $mediaSource = $item['MediaSources'][array_key_first($item['MediaSources'])];
+                if(str_contains($mediaSource['Path'], '/stream?') && str_starts_with($mediaSource['Name'], 'tt')){
+                    $source = '/stream?imdbId=' . $mediaSource['Name'];
+
+                    $currentSource = @parse_url(@file_get_contents(@$item['Path']));
+                    if (isset($currentSource['path']) && isset($currentSource['query']))
+                        $source = $currentSource['path'] . '?' . $currentSource['query'];
+
+                    file_put_contents($item['Path'], app_url($source));
+                }
+            }
+        }
         $response = $api->getItemPlaybackInfo($itemId, $request->all());
         return response()->json($response);
     }
@@ -96,7 +111,7 @@ class JellyfinController extends Controller
         if (!empty($item) && isset($item['Path']) && str_ends_with($item['Path'], '.strm')) {
             if(!empty($item['MediaSources'])) {
                 $mediaSource = $item['MediaSources'][array_key_first($item['MediaSources'])];
-                if ($mediaSource['Name'] == $item['imdbId']) {
+                if (str_starts_with($mediaSource['Name'], $item['imdbId'])) {
                     $source = '/stream?imdbId=' . $item['imdbId'];
 
                     $currentSource = @parse_url(@file_get_contents(@$item['Path']));
@@ -161,18 +176,6 @@ class JellyfinController extends Controller
         }
         $api = new JellyfinApiManager();
         $response = $api->getItemSimilar($itemId, $request->query());
-        return response()->json($response);
-    }
-
-    public function getVideoStream(string $itemId, Request $request) {
-        $query = $request->query();
-        if(isset($query['MediaSourceId']))
-            $itemData = JellyfinManager::decodeItemId($query['MediaSourceId']);
-        if(isset($itemData['streamId']))
-            return redirect(app_url('/stream?streamId=' . $itemData['streamId']));
-
-        $api = new JellyfinApiManager();
-        $response = $api->getVideoStream($itemId, $query);
         return response()->json($response);
     }
 

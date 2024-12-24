@@ -30,8 +30,6 @@ $router->get('/Library/VirtualFolders',                         ['as'=> 'jellyfi
 $router->post('/Library/VirtualFolders',                        ['as'=> 'jellyfin.virtual_folders.create', 'uses'=>'JellyfinController@postVirtualFolders']);
 $router->delete('/Library/VirtualFolders',                      ['as'=> 'jellyfin.virtual_folders.delete', 'uses'=>'JellyfinController@deleteVirtualFolders']);
 
-$router->get('/Videos/{itemId}/stream',                         ['as'=> 'jellyfin.video.stream', 'uses'=>'JellyfinController@getVideoStream']);
-
 $router->get('/Items',                                          ['as'=> 'jellyfin.items', 'uses'=>'JellyfinController@getItems']);
 $router->get('/Items/Latest',                                   ['as'=> 'jellyfin.items.latest', 'uses'=>'JellyfinController@getItemsLatest']);
 $router->get('/Items/{itemId}',                                 ['as'=> 'jellyfin.items.detail', 'uses'=>'JellyfinController@getItem']);

@@ -39,7 +39,7 @@ class StreamsManager
                         'mediaSourceId' => $mediaSourceId,
                         'imdbId' => $item['imdbId'],
                     ]);
-                    $mediaSource['Path'] = app_url('/stream?streamId=' . $stream['stream_md5']);
+                    $mediaSource['Path'] = app_url('/stream?streamId=' . $stream['stream_md5'] . '&imdbId=' . @$item['imdbId']);
                     $mediaSource['Name'] = '['.strtoupper($stream['stream_protocol']).'] '.$stream['stream_title'];
                     $mediaSource['LastPlayed'] = @$stream['stream_watched_at'];
                     $mediaSources[$stream['stream_md5']] = $mediaSource;
@@ -152,22 +152,24 @@ class StreamsManager
             if(!empty(@$source['description']))
                 $title .= " - " . @$source['description'];
 
-            $stream = Streams::query()->where('stream_md5', md5(json_encode($source)))->first();
-            if (!isset($stream))
-                $stream = new Streams();
+            if(!str_contains(strtolower($title), 'download')) {
+                $stream = Streams::query()->where('stream_md5', md5(json_encode($source)))->first();
+                if (!isset($stream))
+                    $stream = new Streams();
 
-            $stream->stream_md5 = md5(json_encode($source));
-            $stream->stream_url = $source['url'];
-            $stream->stream_protocol = isset($source['infoHash']) ? "torrent" : "http";
-            $stream->stream_container = $container;
-            $stream->stream_addon_id = @$addon['repository']['id'];
-            $stream->stream_imdb_id = $imdbId;
-            $stream->stream_jellyfin_id = $mediaSourceId;
-            $stream->stream_title = $title;
-            $stream->stream_host = @$addon['repository']['host'];
-            $stream->save();
+                $stream->stream_md5 = md5(json_encode($source));
+                $stream->stream_url = $source['url'];
+                $stream->stream_protocol = isset($source['infoHash']) ? "torrent" : "http";
+                $stream->stream_container = $container;
+                $stream->stream_addon_id = @$addon['repository']['id'];
+                $stream->stream_imdb_id = $imdbId;
+                $stream->stream_jellyfin_id = $mediaSourceId;
+                $stream->stream_title = $title;
+                $stream->stream_host = @$addon['repository']['host'];
+                $stream->save();
 
-            return $stream;
+                return $stream;
+            }
         }
 
         return [];

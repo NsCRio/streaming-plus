@@ -103,10 +103,6 @@ class JellyfinManager
      * @throws \Exception
      */
     public static function getItemsFromSearchTerm($searchTerm, $itemType = null, $userId = null, array $query = []) : null|array {
-        unset($query['Recursive']);
-        unset($query['Limit']);
-        unset($query['ExcludeLocationTypes']);
-
         $api = new JellyfinApiManager();
         $response = $api->getItems($query);
         if(isset($userId))
@@ -300,7 +296,7 @@ class JellyfinManager
             }
 
             if (!file_exists($filePath))
-                file_put_contents($filePath, $fileContent);
+                file_put_contents($filePath, app_url($fileContent));
 
             return $filePath;
         }catch (\Exception $e){}

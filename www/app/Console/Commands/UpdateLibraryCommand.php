@@ -31,7 +31,7 @@ class UpdateLibraryCommand extends Command
         ini_set('memory_limit', '4000M');
 
         Cache::flush();
-        Session::flush();
+        //Session::flush();
         Log::info('[Library Update] cache cleared.');
 
         //Elimino gli items che esistono da più di 5 giorni e non sono mai stati aperti

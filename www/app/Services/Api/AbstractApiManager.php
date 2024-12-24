@@ -37,7 +37,8 @@ class AbstractApiManager
                 $method = 'POST';
                 $options['json'] = $data;
             }elseif($method == 'GET'){
-                $uri = sprintf("%s?%s", $uri, http_build_query($data));
+                if(!empty($data))
+                    $uri = sprintf("%s?%s", $uri, http_build_query($data));
             }
             $url = isset($this->endpoint) ? $this->endpoint . $uri : $uri;
             $r = $cli->request($method, $url, $options);

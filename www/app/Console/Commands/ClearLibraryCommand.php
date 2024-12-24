@@ -61,6 +61,10 @@ class ClearLibraryCommand extends Command
             system("chown -R ".env('USER_NAME').":".env('USER_NAME')." ".$virtualFolder['path']);
         }
 
+        $api = new JellyfinApiManager();
+        $api->setAuthenticationByApiKey();
+        $api->startLibraryScan();
+
         $this->info("end. (".number_format(microtime(true) - $start, 2)."s)\n");
 
         exit(1);

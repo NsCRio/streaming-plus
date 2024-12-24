@@ -12,6 +12,18 @@ class Streams extends Model
     protected $primaryKey = 'stream_id';
     public $timestamps = true;
 
+    public function getStreamUrl(){
+        if(isset($this->stream_url)) {
+            $streamUrl = $this->stream_url;
+            if ($this->stream_protocol == "torrent")
+                $streamUrl = app_url('/stream-torrent/' . $this->stream_url);
+
+            if (ping($streamUrl))
+                return $streamUrl;
+        }
+        return false;
+    }
+
     public function getItem(){
         $imdbId = @explode(':', @urldecode($this->stream_imdb_id))[0];
         if(isset($imdbId)){

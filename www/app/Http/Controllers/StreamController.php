@@ -17,8 +17,14 @@ use Laravel\Lumen\Routing\Controller as BaseController;
 class StreamController extends BaseController
 {
     public function getStream(Request $request){
+        $streamUrl = false;
 
-        if ($request->has('imdbId')) {
+        if ($request->has('streamId')) {
+            $stream = Streams::query()->where('stream_md5', $request->get('streamId'))->first();
+            $streamUrl = isset($stream) ? $stream->getStreamUrl() : false;
+        }
+
+        if (!$streamUrl && $request->has('imdbId')) {
             $streams = Streams::query()->where('stream_imdb', $request->get('imdbId'))
                 ->where('created_at', '<=', Carbon::now()->addHour())->get();
             if($streams->count() <= 0)
@@ -26,25 +32,22 @@ class StreamController extends BaseController
 
             if (!empty($streams)) {
                 $addonsIds = AddonsApiManager::getActiveAddonsIds();
-                $streams->whereIn('stream_addon_id', $addonsIds);
-                $streams->sortBy('stream_protocol');
-                $streams->sortBy('stream_title', SORT_NATURAL);
-                $streams->sortBy('updated_at', SORT_DESC);
-                $stream = $streams->first();
+                $streams = $streams->whereIn('stream_addon_id', $addonsIds)
+                    ->sortBy('stream_title', SORT_NATURAL)
+                    ->sortBy('stream_protocol', SORT_DESC);
+
+                foreach ($streams as $stream) {
+                    $streamUrl = $stream->getStreamUrl();
+                    if($streamUrl)
+                        break;
+                }
             }
         }
 
-        if ($request->has('streamId'))
-            $stream = Streams::query()->where('stream_md5', $request->get('streamId'))->first();
-
-        if (isset($stream)) {
-            $streamUrl = $stream->stream_url;
-            if ($stream->stream_protocol == "torrent")
-                $streamUrl = app_url('/stream-torrent/' . $stream->stream_url);
-
+        if ($streamUrl) {
             $path = $stream->getItemPath();
             if (isset($path))
-                file_put_contents($path, app_url('/stream?streamId=' . $stream->stream_md5));
+                file_put_contents($path, app_url('/stream?streamId=' . $stream->stream_md5 . '&imdbId=' . $stream->stream_imdb_id));
 
             $stream->stream_watched_at = Carbon::now();
             $stream->save();

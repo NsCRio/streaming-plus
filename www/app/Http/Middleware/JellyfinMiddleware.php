@@ -41,25 +41,6 @@ class JellyfinMiddleware
             }
         }
 
-        $userAgent = str_replace(' ', '-',@explode('/', trim(@$header['user-agent'][0]))[0] ?? "");
-        if (!empty($userAgent) && in_array(strtoupper($userAgent), ['KTOR-CLIENT', 'INFUSE-LIBRARY', 'INFUSE-DIRECT'])) { //Fix for Findroid & Infuse
-            if ($response instanceof JsonResponse) {
-                $data = $response->getData(true);
-                $transformedData = $this->transformEmptyArraysToNull($data);
-                $response->setData($transformedData);
-            }
-        }
-
         return $response;
-    }
-
-    private function transformEmptyArraysToNull($data) {
-        if (is_array($data)) {
-            foreach ($data as $key => $value) {
-                $data[$key] = $this->transformEmptyArraysToNull($value);
-            }
-            return empty($data) ? null : $data;
-        }
-        return $data;
     }
 }
