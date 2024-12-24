@@ -30,10 +30,14 @@ $router->get('/Library/VirtualFolders',                         ['as'=> 'jellyfi
 $router->post('/Library/VirtualFolders',                        ['as'=> 'jellyfin.virtual_folders.create', 'uses'=>'JellyfinController@postVirtualFolders']);
 $router->delete('/Library/VirtualFolders',                      ['as'=> 'jellyfin.virtual_folders.delete', 'uses'=>'JellyfinController@deleteVirtualFolders']);
 
+$router->get('/Videos/{itemId}/stream',                         ['as'=> 'jellyfin.video.stream', 'uses'=>'JellyfinController@getVideoStream']);
+
 $router->get('/Items',                                          ['as'=> 'jellyfin.items', 'uses'=>'JellyfinController@getItems']);
+$router->get('/Items/Latest',                                   ['as'=> 'jellyfin.items.latest', 'uses'=>'JellyfinController@getItemsLatest']);
 $router->get('/Items/{itemId}',                                 ['as'=> 'jellyfin.items.detail', 'uses'=>'JellyfinController@getItem']);
 $router->post('/Items/{itemId}',                                ['as'=> 'jellyfin.items.post', 'uses'=>'JellyfinController@postItem']);
 $router->delete('/Items/{itemId}',                              ['as'=> 'jellyfin.items.delete', 'uses'=>'JellyfinController@deleteItem']);
+$router->get('/Items/{itemId}/Download',                        ['as'=> 'jellyfin.items.download', 'uses'=>'JellyfinController@getItemsDownload']);
 $router->get('/Items/{itemId}/ThemeMedia',                      ['as'=> 'jellyfin.items.theme_media', 'uses'=>'JellyfinController@getItemsThemeMedia']);
 $router->get('/Items/{itemId}/Similar',                         ['as'=> 'jellyfin.items.similar', 'uses'=>'JellyfinController@getItemsSimilar']);
 $router->get('/Items/{itemId}/PlaybackInfo',                    ['as'=> 'jellyfin.items.playback_info', 'uses'=>'JellyfinController@getItemsPlaybackInfo']);

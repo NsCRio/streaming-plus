@@ -88,11 +88,19 @@ class JellyfinApiManager extends AbstractApiManager
     }
 
     public function getItemsLatest(array $query = []){
-        return $this->apiCall('/Items', 'GET', $query);
+        return $this->apiCall('/Items/Latest', 'GET', $query);
     }
 
     public function getUsersItemsLatest(string $userId, array $query = []){
         return $this->apiCall('/Users/'.$userId.'/Items/Latest', 'GET', $query);
+    }
+
+    public function getItemDownload(string $itemId, array $query = []){
+        return $this->apiCall('/Items/'.$itemId.'/Download', 'GET', $query, [], true);
+    }
+
+    public function getItemFile(string $itemId, array $query = []){
+        return $this->apiCall('/Items/'.$itemId.'/File', 'GET', $query, [], true);
     }
 
     public function getItemPlaybackInfo(string $itemId, array $query = []){
@@ -139,6 +147,10 @@ class JellyfinApiManager extends AbstractApiManager
 
     public function setSessionsPlayingProgress(array $query = []){
         return $this->apiCall('/Sessions/Playing/Progress', 'POST_BODY', $query);
+    }
+
+    public function getVideoStream(string $itemId, array $query = []){
+        return $this->apiCall('/Videos/'.$itemId.'/stream', 'GET', $query);
     }
 
     public function getPersons(array $query = []){

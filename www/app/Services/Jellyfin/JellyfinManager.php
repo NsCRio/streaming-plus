@@ -21,7 +21,7 @@ class JellyfinManager
     }
 
     public static function decodeItemId(string $itemId){
-        if (strlen($itemId) > 32) { //default is md5
+        if (strlen($itemId) > 36) { //default is md5
             $outcome = json_decode(base64_decode($itemId) ,true);
             if(!isset($outcome['mediaSourceId']))
                 $outcome['mediaSourceId'] = @$outcome['streamId'];
@@ -103,6 +103,10 @@ class JellyfinManager
      * @throws \Exception
      */
     public static function getItemsFromSearchTerm($searchTerm, $itemType = null, $userId = null, array $query = []) : null|array {
+        unset($query['Recursive']);
+        unset($query['Limit']);
+        unset($query['ExcludeLocationTypes']);
+
         $api = new JellyfinApiManager();
         $response = $api->getItems($query);
         if(isset($userId))
@@ -110,7 +114,7 @@ class JellyfinManager
         $isMissing = (bool) @$query['isMissing'];
         $mediaTypes = (bool) @$query['mediaTypes'];
 
-        if((empty($itemType) || in_array($itemType, ["Movie", "Series"])) && !$isMissing && !$mediaTypes) {
+        if(!empty($searchTerm) && (empty($itemType) || in_array($itemType, ["Movie", "Series"])) && !$isMissing && !$mediaTypes) {
             $search = new ItemsSearchManager($searchTerm, @self::$typesMap[$itemType]);
             $results = $search->search()->getResults();
 
